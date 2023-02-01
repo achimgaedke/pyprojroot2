@@ -22,7 +22,7 @@ __all__ = [
 
 
 from pathlib import Path
-from typing import Union, Iterable, AnyStr, Any
+from typing import Union, Iterable, Any
 from typing_extensions import Protocol, runtime_checkable
 
 from os import PathLike
