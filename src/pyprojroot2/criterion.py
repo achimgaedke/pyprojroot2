@@ -22,7 +22,7 @@ __all__ = [
 
 
 from pathlib import Path
-from typing import Union, Iterable, AnyStr
+from typing import Union, Iterable, AnyStr, Any
 from typing_extensions import Protocol, runtime_checkable
 
 from os import PathLike
@@ -34,7 +34,7 @@ class CriterionFunction(Protocol):
         ...
 
 
-Criterion = Union[CriterionFunction, "PathLike[AnyStr]"]
+Criterion = Union[CriterionFunction, "PathLike"]
 
 
 Criteria = Iterable[Criterion]
@@ -64,7 +64,7 @@ def as_root_criterion(criterion: Union[Criterion, Criteria]) -> CriterionFunctio
     return f
 
 
-def has_file(file: Union[str, "PathLike[str]"]) -> CriterionFunction:
+def has_file(file: Union[str, PathLike[Any]]) -> CriterionFunction:
     """
     Check that specified file exists in path.
 
@@ -77,7 +77,7 @@ def has_file(file: Union[str, "PathLike[str]"]) -> CriterionFunction:
     return f
 
 
-def has_dir(file: Union[str, "PathLike[str]"]) -> CriterionFunction:
+def has_dir(file: Union[str, PathLike[Any]]) -> CriterionFunction:
     """
     Check that specified directory exists.
 

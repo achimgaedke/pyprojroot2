@@ -9,7 +9,7 @@ __all__ = ["CRITERIA", "get_here", "here"]
 
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple, Any
 from warnings import warn
 
 from . import criterion
@@ -29,7 +29,7 @@ CRITERIA = [
 ]
 
 
-def get_here():
+def get_here() -> Tuple[Path, str]:
     # TODO: This should only find_root once per session
     start = Path.cwd()
     path, reason = find_root_with_reason(CRITERIA, start=start)
@@ -40,7 +40,7 @@ def get_here():
 
 
 def here(
-    relative_project_path: Union[str, "PathLike[str]"] = "", warn_missing=False
+    relative_project_path: Union[str, PathLike[Any]] = "", warn_missing: bool = False
 ) -> Path:
     """
     Returns the path relative to the projects root directory.

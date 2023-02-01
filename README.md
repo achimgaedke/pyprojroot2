@@ -1,3 +1,16 @@
+# Origin / Fork
+
+This project is a fork of [Daniel Chen's pyprojroot](https://github.com/chendaniely/pyprojroot)
+and based on [Joseph Egan's pull request](https://github.com/chendaniely/pyprojroot/pull/28).
+
+The fork moves the project forward to:
+
+* compatibility with rprojroot version 2
+* (tested) support for python 3.7 to 3.11
+* bring the typing annotations to a useful state (LSP, linters)
+* updated packging configuration/toolchain
+* distribution to pypi and conda as `pyprojroot2`
+
 # Project-oriented workflow in Python
 
 Finding project directories in Python (data science) projects.
@@ -5,6 +18,17 @@ Finding project directories in Python (data science) projects.
 This library aims to provide both
 the programmatic functionality from the R [`rprojroot`][rprojroot] package
 and the interactive functionality from the R [`here`][here] package.
+
+## Useful commands
+
+```shell
+mamba env create -f environment-dev.yml
+mamba env update -f environment-dev.yml  
+```
+
+```shell
+python -m build
+```
 
 ## Motivation
 
@@ -17,7 +41,7 @@ and I want to be able to:
 3. Reference datasets from a root directory when using a jupyter notebook because everytime I use a jupyter notebook,
   the working directory changes to the location of the notebook, not where I launched the notebook server.
 
-**Solution**: `pyprojroot` finds the root working directory for your project as a `pathlib.Path` object.
+**Solution**: `pyprojroot` and `pyprojroot2` finds the root working directory for your project as a `pathlib.Path` object.
 You can now use the `here` function to pass in a relative path from the project root directory
 (no matter what working directory you are in the project),
 and you will get a full path to the specified file.
@@ -39,15 +63,15 @@ Further reading:
 ### pip
 
 ```bash
-python -m pip install pyprojroot
+python -m pip install pyprojroot2
 ```
 
 ### conda
 
-https://anaconda.org/conda-forge/pyprojroot
+https://anaconda.org/conda-forge/pyprojroot2
 
 ```bash
-conda install -c conda-forge pyprojroot
+conda install -c conda-forge pyprojroot2
 ```
 
 ## Example Usage
@@ -57,7 +81,7 @@ conda install -c conda-forge pyprojroot
 This is based on the R [`here`][here] library.
 
 ```python
-from pyprojroot.here import here
+from pyprojroot2.here import here
 
 here()
 ```
@@ -67,9 +91,9 @@ here()
 This based on the R [`rprojroot`][rprojroot] library.
 
 ```python
-import pyprojroot
+import pyprojroot2
 
-base_path = pyprojroot.find_root(pyprojroot.has_dir(".git"))
+base_path = pyprojroot2.find_root(pyprojroot2.has_dir(".git"))
 ```
 
 ## Demonstration
@@ -77,7 +101,7 @@ base_path = pyprojroot.find_root(pyprojroot.has_dir(".git"))
 Load the packages
 
 ```
-In [1]: from pyprojroot.here import here
+In [1]: from pyprojroot2.here import here
 In [2]: import pandas as pd
 ```
 
