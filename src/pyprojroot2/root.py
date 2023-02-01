@@ -6,11 +6,16 @@ It is intended for interactive or programmatic only.
 """
 __all__ = ["as_start_path", "find_root_with_reason", "find_root"]
 
-from os import PathLike
 from pathlib import Path
-from typing import Tuple, Optional, Union, Any
+from typing import Tuple, Optional, Union
 
-from .criterion import as_root_criterion, Criterion, Criteria, CriterionFunction, PathSpec
+from .criterion import (
+    as_root_criterion,
+    Criterion,
+    Criteria,
+    CriterionFunction,
+    PathSpec,
+)
 
 
 def as_start_path(start: Optional[PathSpec]) -> Path:

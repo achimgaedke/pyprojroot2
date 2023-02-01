@@ -7,9 +7,8 @@ It is intended for interactive use only.
 
 __all__ = ["CRITERIA", "get_here", "here"]
 
-from os import PathLike
 from pathlib import Path
-from typing import Union, Tuple, Any
+from typing import Tuple
 from warnings import warn
 
 from . import criterion
@@ -40,9 +39,7 @@ def get_here() -> Tuple[Path, str]:
 # TODO: Implement set_here
 
 
-def here(
-    relative_project_path: PathSpec = "", warn_missing: bool = False
-) -> Path:
+def here(relative_project_path: PathSpec = "", warn_missing: bool = False) -> Path:
     """
     Returns the path relative to the projects root directory.
     :param relative_project_path: relative path from project root

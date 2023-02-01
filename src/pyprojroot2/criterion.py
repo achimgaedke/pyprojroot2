@@ -35,6 +35,7 @@ except TypeError:
 else:
     PathSpec = Union[str, PathLike[Any]]  # type: ignore
 
+
 @runtime_checkable
 class CriterionFunction(Protocol):
     def __call__(self, path: Path) -> bool:
