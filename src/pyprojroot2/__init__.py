@@ -2,6 +2,7 @@ from .criterion import (  # noqa: F401
     CriterionFunction,
     Criterion,
     Criteria,
+    PathSpec,
     as_root_criterion,
     has_file,
     has_dir,

@@ -9,6 +9,7 @@ __all__ = [
     "CriterionFunction",
     "Criterion",
     "Criteria",
+    "PathSpec",
     "as_root_criterion",
     "has_file",
     "has_dir",
@@ -27,6 +28,12 @@ from typing_extensions import Protocol, runtime_checkable
 
 from os import PathLike
 
+try:
+    PathLike[Any]
+except TypeError:
+    PathSpec = Union[str, PathLike]
+else:
+    PathSpec = Union[str, PathLike[Any]]  # type: ignore
 
 @runtime_checkable
 class CriterionFunction(Protocol):
@@ -34,7 +41,7 @@ class CriterionFunction(Protocol):
         ...
 
 
-Criterion = Union[CriterionFunction, "PathLike"]
+Criterion = Union[CriterionFunction, PathSpec]
 
 
 Criteria = Iterable[Criterion]
@@ -53,7 +60,7 @@ def as_root_criterion(criterion: Union[Criterion, Criteria]) -> CriterionFunctio
 
     def f(path: Path) -> bool:
         for c in criteria:
-            if isinstance(c, PathLike):
+            if isinstance(c, PathLike) or isinstance(c, str):
                 if (path / c).exists():
                     return True
             else:
@@ -64,7 +71,7 @@ def as_root_criterion(criterion: Union[Criterion, Criteria]) -> CriterionFunctio
     return f
 
 
-def has_file(file: Union[str, PathLike[Any]]) -> CriterionFunction:
+def has_file(file: PathSpec) -> CriterionFunction:
     """
     Check that specified file exists in path.
 
@@ -77,7 +84,7 @@ def has_file(file: Union[str, PathLike[Any]]) -> CriterionFunction:
     return f
 
 
-def has_dir(file: Union[str, PathLike[Any]]) -> CriterionFunction:
+def has_dir(file: PathSpec) -> CriterionFunction:
     """
     Check that specified directory exists.
 

@@ -10,10 +10,10 @@ from os import PathLike
 from pathlib import Path
 from typing import Tuple, Optional, Union, Any
 
-from .criterion import as_root_criterion, Criterion, Criteria, CriterionFunction
+from .criterion import as_root_criterion, Criterion, Criteria, CriterionFunction, PathSpec
 
 
-def as_start_path(start: Optional[PathLike[Any]]) -> Path:
+def as_start_path(start: Optional[PathSpec]) -> Path:
     if start is None:
         return Path.cwd()
     if not isinstance(start, Path):
@@ -23,7 +23,7 @@ def as_start_path(start: Optional[PathLike[Any]]) -> Path:
 
 
 def find_root_with_reason(
-    criterion: Union[Criterion, Criteria], start: Optional[PathLike[Any]] = None
+    criterion: Union[Criterion, Criteria], start: Optional[PathSpec] = None
 ) -> Tuple[Path, str]:
     """
     Find directory matching root criterion with reason.
@@ -52,7 +52,7 @@ def find_root_with_reason(
     raise RuntimeError("Project root not found.")
 
 
-def find_root(criterion: Criterion, start: Optional[PathLike[Any]] = None) -> Path:
+def find_root(criterion: Criterion, start: Optional[PathSpec] = None) -> Path:
     """
     Find directory matching root criterion.
 

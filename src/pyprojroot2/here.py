@@ -13,6 +13,7 @@ from typing import Union, Tuple, Any
 from warnings import warn
 
 from . import criterion
+from .criterion import PathSpec
 from .root import find_root_with_reason
 
 CRITERIA = [
@@ -40,7 +41,7 @@ def get_here() -> Tuple[Path, str]:
 
 
 def here(
-    relative_project_path: Union[str, PathLike[Any]] = "", warn_missing: bool = False
+    relative_project_path: PathSpec = "", warn_missing: bool = False
 ) -> Path:
     """
     Returns the path relative to the projects root directory.
