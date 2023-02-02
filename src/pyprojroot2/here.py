@@ -11,21 +11,20 @@ from pathlib import Path
 from typing import Tuple
 from warnings import warn
 
-from . import criterion
-from .criterion import PathSpec
+from .criterion import PathSpec, has_dir, has_file, matches_glob
 from .root import find_root_with_reason
 
 CRITERIA = [
-    criterion.has_file(".here"),
-    criterion.has_dir(".git"),
-    criterion.matches_glob("*.Rproj"),
-    criterion.has_file("requirements.txt"),
-    criterion.has_file("setup.py"),
-    criterion.has_dir(".dvc"),
-    criterion.has_dir(".spyproject"),
-    criterion.has_file("pyproject.toml"),
-    criterion.has_dir(".idea"),
-    criterion.has_dir(".vscode"),
+    has_file(".here"),
+    has_dir(".git"),
+    matches_glob("*.Rproj"),
+    has_file("requirements.txt"),
+    has_file("setup.py"),
+    has_dir(".dvc"),
+    has_dir(".spyproject"),
+    has_file("pyproject.toml"),
+    has_dir(".idea"),
+    has_dir(".vscode"),
 ]
 
 

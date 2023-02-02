@@ -2,12 +2,12 @@ name: pyprojroot-dev
 channels:
 - conda-forge
 dependencies:
+- black
 - build
+- flake8
 - make
-- wheel
-- python=3.11
+- mypy
+- pytest
+- python
 - typing-extensions
-- pytest>=6.1.1
-- black>=19.3b0
-- mypy>=0.720
-- flake8>=3.8.4
+- wheel

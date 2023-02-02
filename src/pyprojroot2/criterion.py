@@ -29,11 +29,10 @@ from typing_extensions import Protocol, runtime_checkable
 from os import PathLike
 
 try:
-    PathLike[Any]
+    PathSpec = Union[str, PathLike[Any]]
 except TypeError:
-    PathSpec = Union[str, PathLike]
-else:
-    PathSpec = Union[str, PathLike[Any]]  # type: ignore
+    # fallback TypeError: 'ABCMeta' object is not subscriptable
+    PathSpec = Union[str, PathLike]  # type: ignore
 
 
 @runtime_checkable
@@ -61,7 +60,7 @@ def as_root_criterion(criterion: Union[Criterion, Criteria]) -> CriterionFunctio
 
     def f(path: Path) -> bool:
         for c in criteria:
-            if isinstance(c, PathLike) or isinstance(c, str):
+            if isinstance(c, (str, PathLike)):
                 if (path / c).exists():
                     return True
             else:
@@ -85,7 +84,7 @@ def has_file(file: PathSpec) -> CriterionFunction:
     return f
 
 
-def has_dir(file: PathSpec) -> CriterionFunction:
+def has_dir(directory: PathSpec) -> CriterionFunction:
     """
     Check that specified directory exists.
 
@@ -93,7 +92,7 @@ def has_dir(file: PathSpec) -> CriterionFunction:
     """
 
     def f(path: Path) -> bool:
-        return (path / file).is_dir()
+        return (path / directory).is_dir()
 
     return f
 

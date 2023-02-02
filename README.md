@@ -5,11 +5,12 @@ and based on [Joseph Egan's pull request](https://github.com/chendaniely/pyprojr
 
 The fork moves the project forward to:
 
-* compatibility with rprojroot version 2
-* (tested) support for python 3.7 to 3.11
+* compatibility with [rprojroot](https://github.com/r-lib/rprojroot) version 2
+* tested support for python >=3.7
 * bring the typing annotations to a useful state (LSP, linters)
 * updated packging configuration/toolchain
-* distribution to pypi and conda as `pyprojroot2`
+* (future) increase test coverage
+* (future) distribution to pypi and conda as `pyprojroot2`
 
 # Project-oriented workflow in Python
 
