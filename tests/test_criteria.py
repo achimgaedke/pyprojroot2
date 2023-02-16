@@ -124,20 +124,20 @@ def test_has_file_cirterion() -> None:
 
         assert HasFile("my_file").find_root_with_reason(test_dir) == (
             pathlib.Path(test_dir).resolve(),
-            "has a file `my_file`",
+            "criterion: has a file `my_file`",
         )
         assert HasFile("my_file", "a", 1, fixed=True).find_root_with_reason(
             test_dir
         ) == (
             pathlib.Path(test_dir).resolve(),
-            "has a file `my_file` and contains a line with the contents `a` in the first 1 line/s",
+            "criterion: has a file `my_file` and contains a line with the contents `a` in the first 1 line/s",
         )
 
         assert HasFile("my_file", "[ac]", 1, fixed=False).find_root_with_reason(
             test_dir
         ) == (
             pathlib.Path(test_dir).resolve(),
-            "has a file `my_file` and contains a line matching the regular expression `[ac]` in the first 1 line/s",
+            "criterion: has a file `my_file` and contains a line matching the regular expression `[ac]` in the first 1 line/s",
         )
 
         # test the description function
@@ -210,7 +210,7 @@ def test_all_criteria() -> None:
             test_dir / "a/b"
         )
         assert combined_root == test_dir.resolve()
-        assert combined_reason == "contains the directory `a` and has a file `my_file`"
+        assert combined_reason == "criterion: contains the directory `a` and has a file `my_file`"
 
         combined_all_any = combined_criteria & HasDir("b") | HasBasename(test_dir.name)
         assert isinstance(combined_all_any, AnyCriteria)  # due to operator precedence
@@ -219,4 +219,4 @@ def test_all_criteria() -> None:
         assert combined_all_any.find_root(test_dir / "a")
         combined_root, reason = combined_all_any.find_root_with_reason(test_dir / "a")
         assert combined_root == test_dir.resolve()
-        assert reason == f"has the basename `{test_dir.name}`"
+        assert reason == f"criterion: has the basename `{test_dir.name}`"

@@ -22,9 +22,7 @@ class Criterion(abc.ABC):
 
     def find_root(self, *args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
         # convenience function
-        from .root import RootCriterion
-
-        return RootCriterion(self).find_root(*args, **kwargs)
+        return self.as_root_criterion().find_root(*args, **kwargs)
 
     def find_root_with_reason(
         self, *args: typing.Any, **kwargs: typing.Any
@@ -39,8 +37,7 @@ class Criterion(abc.ABC):
     def as_root_criterion(self) -> "RootCriterion":
         # convenience function
         from .root import RootCriterion
-
-        return RootCriterion(self)
+        return RootCriterion(criterion=self)
 
     @abc.abstractmethod
     def is_met(self, dir: pathlib.Path) -> bool:
@@ -272,7 +269,7 @@ class AnyCriteria(Criterion):
     """
 
     def __init__(self, *criteria: Criterion):
-        self.criteria = list(criteria)
+        self.criteria = criteria
         super().__init__()
 
     def description(self) -> str:
@@ -302,7 +299,7 @@ class AllCriteria(Criterion):
     """
 
     def __init__(self, *criteria: Criterion):
-        self.criteria = list(criteria)
+        self.criteria = criteria
         super().__init__()
 
     def description(self) -> str:
