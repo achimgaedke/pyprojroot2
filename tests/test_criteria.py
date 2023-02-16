@@ -5,7 +5,18 @@ import shutil
 import tempfile
 import typing
 
-from pyprojroot2.criteria import HasFile, IsCwd
+import pytest
+
+from pyprojroot2.criteria import (
+    HasFile,
+    IsCwd,
+    AnyCriteria,
+    HasBasename,
+    AllCriteria,
+    HasDir,
+    HasFileGlob,
+    HasFilePattern,
+)
 
 
 # todo: make this a fixture with pytest
@@ -42,9 +53,13 @@ def fs_structure(
 
 @contextlib.contextmanager
 def chdir(new_dir: typing.Union[str, pathlib.Path]) -> typing.Iterator[None]:
+    """
+    Changes the current directory for the time of the context and restores
+    the previous one.
+    """
+    # NB this is not threadsafe as it manipulates the global current path
     old_cwd = os.curdir
     os.chdir(new_dir)
-
     try:
         yield
     finally:
@@ -93,7 +108,8 @@ def test_has_file_cirterion() -> None:
         assert open(my_file).read() == testfile_contents
 
         # test that non-existing root is returned as None
-        assert HasFile("my_file_not there").find_root(test_dir) is None
+        with pytest.raises(FileNotFoundError):
+            HasFile("my_file_not there").find_root(test_dir)
 
         # test current directory setting
         with chdir(test_dir):
@@ -102,9 +118,105 @@ def test_has_file_cirterion() -> None:
         with chdir(test_dir / "a"):
             assert HasFile("my_file").find_file("my_file")
 
+        # look at the reason
+        with pytest.raises(FileNotFoundError):
+            HasFile("my_file_not there").find_root_with_reason(test_dir)
+
+        assert HasFile("my_file").find_root_with_reason(test_dir) == (
+            pathlib.Path(test_dir).resolve(),
+            "has a file `my_file`",
+        )
+        assert HasFile("my_file", "a", 1, fixed=True).find_root_with_reason(
+            test_dir
+        ) == (
+            pathlib.Path(test_dir).resolve(),
+            "has a file `my_file` and contains a line with the contents `a` in the first 1 line/s",
+        )
+
+        assert HasFile("my_file", "[ac]", 1, fixed=False).find_root_with_reason(
+            test_dir
+        ) == (
+            pathlib.Path(test_dir).resolve(),
+            "has a file `my_file` and contains a line matching the regular expression `[ac]` in the first 1 line/s",
+        )
+
+        # test the description function
+        assert (
+            HasFile("my_file", "a", 1, fixed=True).description()
+            == "has a file `my_file` and contains a line with the contents `a` in the first 1 line/s"
+        )
+        assert (
+            HasFile("my_file", "[ab]", 3).description()
+            == "has a file `my_file` and contains a line matching the regular expression `[ab]` in the first 3 line/s"
+        )
+
 
 def test_current_dir() -> None:
     with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
         with chdir(test_dir):
             assert IsCwd().is_met(test_dir)
             assert test_dir.resolve() == IsCwd().find_root(test_dir / "a" / "b" / "c")
+
+
+def test_has_basename() -> None:
+    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
+        assert HasBasename("a").is_met(test_dir / "a")
+        assert not HasBasename("a").is_met(test_dir)
+        assert HasBasename(test_dir.name).is_met(test_dir)
+
+
+def test_pattern_filenames() -> None:
+    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
+        assert HasFileGlob("my_*").is_met(test_dir)
+        assert HasFilePattern("_fil").is_met(test_dir)
+        assert not HasFilePattern("^_fil").is_met(test_dir)
+        assert not HasFilePattern("[ab]").is_met(test_dir)
+
+        assert HasFileGlob("my_*").description() == "has a file matching `my_*`"
+        assert (
+            HasFilePattern("_fil").description()
+            == "has a file matching the regular expression `_fil`"
+        )
+
+
+def test_any_criteria() -> None:
+    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
+        combined_criteria = HasBasename("a") | HasFile("my_file")
+        assert isinstance(combined_criteria, AnyCriteria)
+
+        assert combined_criteria.is_met(test_dir)
+        assert combined_criteria.is_met(test_dir / "a")
+        assert not combined_criteria.is_met(test_dir / "b")
+
+        assert (
+            combined_criteria.description()
+            == "has the basename `a` or has a file `my_file`"
+        )
+
+
+def test_all_criteria() -> None:
+    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
+        combined_criteria = HasDir("a") & HasFile("my_file")
+        assert isinstance(combined_criteria, AllCriteria)
+
+        assert combined_criteria.is_met(test_dir)
+        assert not (combined_criteria & HasDir("b")).is_met(test_dir)
+
+        assert (
+            combined_criteria.description()
+            == "contains the directory `a` and has a file `my_file`"
+        )
+        combined_root, combined_reason = combined_criteria.find_root_with_reason(
+            test_dir / "a/b"
+        )
+        assert combined_root == test_dir.resolve()
+        assert combined_reason == "contains the directory `a` and has a file `my_file`"
+
+        combined_all_any = combined_criteria & HasDir("b") | HasBasename(test_dir.name)
+        assert isinstance(combined_all_any, AnyCriteria)  # due to operator precedence
+        assert combined_all_any.is_met(test_dir)
+
+        assert combined_all_any.find_root(test_dir / "a")
+        combined_root, reason = combined_all_any.find_root_with_reason(test_dir / "a")
+        assert combined_root == test_dir.resolve()
+        assert reason == f"has the basename `{test_dir.name}`"

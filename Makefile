@@ -1,9 +1,3 @@
-.PHONY: deploy
-deploy:
-	rm -f dist/*
-	python -m build
-	python -m twine upload dist/*
-
 .PHONY: lint
 lint:
 	python -m mypy src/pyprojroot2
@@ -16,4 +10,4 @@ fmt:
 
 .PHONY: test
 test:
-	PYTHONPATH="src" python -m pytest --cov=pyprojroot2
+	PYTHONPATH="src" python -m pytest --cov-report term-missing --cov=pyprojroot2

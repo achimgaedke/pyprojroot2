@@ -3,6 +3,9 @@ import pathlib
 import re
 import typing
 
+if typing.TYPE_CHECKING:
+    from .root import RootCriterion
+
 
 class Criterion(abc.ABC):
     """
@@ -17,21 +20,27 @@ class Criterion(abc.ABC):
     def __repr__(self) -> str:
         return f"<Criterion: {self.description().capitalize()}>"
 
-    def find_root(
-        self, *args: typing.Any, **kwargs: typing.Any
-    ) -> typing.Union[None, pathlib.Path]:
+    def find_root(self, *args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
         # convenience function
         from .root import RootCriterion
 
         return RootCriterion(self).find_root(*args, **kwargs)
 
-    def find_file(
+    def find_root_with_reason(
         self, *args: typing.Any, **kwargs: typing.Any
-    ) -> typing.Union[None, pathlib.Path]:
+    ) -> typing.Tuple[pathlib.Path, str]:
+        # convenience function
+        return self.as_root_criterion().find_root_with_reason(*args, **kwargs)
+
+    def find_file(self, *args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
+        # convenience function
+        return self.as_root_criterion().find_file(*args, **kwargs)
+
+    def as_root_criterion(self) -> "RootCriterion":
         # convenience function
         from .root import RootCriterion
 
-        return RootCriterion(self).find_file(*args, **kwargs)
+        return RootCriterion(self)
 
     @abc.abstractmethod
     def is_met(self, dir: pathlib.Path) -> bool:
@@ -55,6 +64,17 @@ class Criterion(abc.ABC):
 
 
 class HasFile(Criterion):
+    """
+    Matches if the named file is present, optionally the file's contents
+    can be matched.
+
+    ``contents`` is the matching string or regular expression
+    ``n`` limits the number of lines searched, -1 is unlimited.
+    ``fixed`` is True if a fixed string should match an entire line.
+              is False if the contents is a regular expression matching a part
+              of the line (i.e. use the anchors ``^``, ``$`` for start and end).
+    """
+
     def __init__(
         self,
         filename: str,
@@ -102,14 +122,13 @@ class HasFile(Criterion):
 
         description = "contains "
 
-        if isinstance(self.contents, re.Pattern):
-            # todo: store uncompiled pattern!
-            description += f"a line matching the regular expression `{self.contents}`"
-        else:
+        if self.fixed:
             description += f"a line with the contents `{self.contents}`"
+        else:
+            description += f"a line matching the regular expression `{self.contents}`"
 
         if self.max_lines_to_search >= 0:
-            description += f" in the first {self.max_lines_to_search} lines"
+            description += f" in the first {self.max_lines_to_search} line/s"
 
         return description
 
@@ -127,6 +146,8 @@ class HasFile(Criterion):
 class HasFilePattern(HasFile):
     """
     Search for file matching regular expression pattern.
+
+    Limitation: Searches only for entries at the same directory level
     """
 
     def __init__(
@@ -163,7 +184,9 @@ class HasFilePattern(HasFile):
 
 class HasFileGlob(HasFile):
     """
-    Search for filename matching glob pattern.
+    Search for filename matching the glob pattern.
+
+    The glob pattern allows searching in subdirectories.
     """
 
     def __init__(
@@ -193,7 +216,7 @@ class HasFileGlob(HasFile):
 
 class HasDir(Criterion):
     """
-    Search for a directory of the given name
+    Match if a directory of the given name is present.
     """
 
     def __init__(self, dirname: str):
@@ -213,6 +236,10 @@ class HasDir(Criterion):
 
 
 class HasBasename(Criterion):
+    """
+    The directory's basename is equal to the name specified.
+    """
+
     def __init__(self, basename: str):
         self.basename = basename
         super().__init__()
@@ -225,6 +252,11 @@ class HasBasename(Criterion):
 
 
 class IsCwd(Criterion):
+    """
+    Directory is the current directory while searching
+    for the project root.
+    """
+
     def is_met(self, dir: pathlib.Path) -> bool:
         return pathlib.Path.cwd().resolve() == dir.resolve()
 
@@ -234,23 +266,25 @@ class IsCwd(Criterion):
 
 class AnyCriteria(Criterion):
     """
-    The highest (i.e. has most path components) directory matching
-    ANY of the criteria is selected.
+    The directory matches when at least one of the cirteria is met.
 
-    This is the behavior of pyprojroot's root_cirterion.
+    Criteria can be linked together with ``|`` to form ``AnyCriteria``.
     """
 
     def __init__(self, *criteria: Criterion):
         self.criteria = list(criteria)
         super().__init__()
 
+    def description(self) -> str:
+        return " or ".join(c.description() for c in self.criteria)
+
     def is_met(self, dir: pathlib.Path) -> bool:
         return any(c.is_met(dir) for c in self.criteria)
 
     def is_met_with_reason(self, dir: pathlib.Path) -> typing.Union[str, bool]:
         for c in self.criteria:
-            c_met = c.is_met(dir)
-            if c_met:
+            c_met = c.is_met_with_reason(dir)
+            if isinstance(c_met, str):
                 return c_met
         return False
 
@@ -262,13 +296,17 @@ class AnyCriteria(Criterion):
 
 class AllCriteria(Criterion):
     """
-    The highest directory (i.e. has most path components) matching
-    ALL of the criteria is selected.
+    The directory matches when all cirteria are met.
+
+    Criteria can be linked together with ``&`` to form ``AllCriteria``.
     """
 
     def __init__(self, *criteria: Criterion):
         self.criteria = list(criteria)
         super().__init__()
+
+    def description(self) -> str:
+        return " and ".join(c.description() for c in self.criteria)
 
     def is_met(self, dir: pathlib.Path) -> bool:
         return all(c.is_met(dir) for c in self.criteria)
@@ -276,12 +314,11 @@ class AllCriteria(Criterion):
     def is_met_with_reason(self, dir: pathlib.Path) -> typing.Union[str, bool]:
         reasons: typing.List[str] = []
         for c in self.criteria:
-            c_met = c.is_met(dir)
-            if isinstance(c_met, str):
-                reasons.append(c_met)
+            reason = c.is_met_with_reason(dir)
+            if isinstance(reason, str):
+                reasons.append(reason)
             else:
                 return False
-
         return " and ".join(reasons)
 
     def __and__(self, other: Criterion) -> "AllCriteria":
