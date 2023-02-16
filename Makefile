@@ -1,23 +1,19 @@
 .PHONY: deploy
 deploy:
 	rm -f dist/*
-	python setup.py sdist bdist_wheel
+	python -m build
 	python -m twine upload dist/*
-
-.PHONY: test_install
-test_install:
-	python -m pip install --index-url https://pypi.org/simple/ --no-deps --upgrade pyprojroot
 
 .PHONY: lint
 lint:
-	python -m mypy --strict pyprojroot
-	python -m flake8 pyprojroot tests
-	python -m black --check --diff pyprojroot tests
+	python -m mypy src/pyprojroot2
+	python -m flake8 src/pyprojroot2 tests
+	python -m black --check --diff src/pyprojroot2 tests
 
 .PHONY: fmt
 fmt:
-	python -m black pyprojroot tests
+	python -m black src/pyprojroot2 tests
 
 .PHONY: test
 test:
-	python -m pytest
+	PYTHONPATH="src" python -m pytest --cov=pyprojroot2
