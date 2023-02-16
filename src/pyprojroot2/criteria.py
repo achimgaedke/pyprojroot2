@@ -37,6 +37,7 @@ class Criterion(abc.ABC):
     def as_root_criterion(self) -> "RootCriterion":
         # convenience function
         from .root import RootCriterion
+
         return RootCriterion(criterion=self)
 
     @abc.abstractmethod

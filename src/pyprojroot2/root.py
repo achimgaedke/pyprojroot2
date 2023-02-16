@@ -17,12 +17,12 @@ class RootCriterion:
     but here the details nonetheless:
 
     By default (``cirteria_first=True``) the criteria are tested in sequence and
-    the path of the first matching criterium is selected, prefering the first 
+    the path of the first matching criterium is selected, prefering the first
     criterion.
 
     `pyprojroot` tests all each parent directory whether any cirteria matches,
     therefore prefers higher subdirectories. Set ``criteria_first=False`` to
-    choose this behaviour.    
+    choose this behaviour.
     """
 
     def __init__(

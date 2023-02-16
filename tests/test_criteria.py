@@ -210,7 +210,10 @@ def test_all_criteria() -> None:
             test_dir / "a/b"
         )
         assert combined_root == test_dir.resolve()
-        assert combined_reason == "criterion: contains the directory `a` and has a file `my_file`"
+        assert (
+            combined_reason
+            == "criterion: contains the directory `a` and has a file `my_file`"
+        )
 
         combined_all_any = combined_criteria & HasDir("b") | HasBasename(test_dir.name)
         assert isinstance(combined_all_any, AnyCriteria)  # due to operator precedence
