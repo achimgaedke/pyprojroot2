@@ -91,14 +91,16 @@ class HasFile(Criterion):
         """
         max_lines = self.max_lines_to_search
         with open(file, "rt") as txt_file:
-            for line_no, line in enumerate(txt_file):
-                if max_lines >= 0 and line_no >= max_lines:
+            while max_lines != 0:
+                line = txt_file.readline()
+                if not line:
                     return
                 # removesuffix introduced at python 3.9
                 if line[-1] == "\n":
                     yield line[:-1]
                 else:
                     yield line
+                max_lines -= 1
 
     def check_file_contents(self, file: pathlib.Path) -> bool:
         """
