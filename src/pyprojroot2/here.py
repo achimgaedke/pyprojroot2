@@ -1,4 +1,7 @@
-from .predefined_roots import PY_ROOT_CRITERION
+from .predefined_roots import py_root_criterion
+
+# this module presents functions, which are largely provided as
+# methods of RootCriterion
 
 # Todo: implement:
 # set_here
@@ -9,10 +12,15 @@ from .predefined_roots import PY_ROOT_CRITERION
 
 # these function should/could be cached
 # R seems to set this once on library load time
-# or at i_am
-# or do_refresh_here
+# and reset at at i_am or do_refresh_here
 
-here = PY_ROOT_CRITERION.find_file
+# also look at
+# https://pypi.org/project/pyhere/
+# https://github.com/wildland-creative/pyhere
+
+HERE_CRITERION = py_root_criterion
+
+here = HERE_CRITERION.find_file
 
 # that's from https://github.com/chendaniely/pyprojroot/blob/dev/src/pyprojroot/here.py#L29
-get_here = PY_ROOT_CRITERION.find_root_with_reason
+get_here = HERE_CRITERION.find_root_with_reason
