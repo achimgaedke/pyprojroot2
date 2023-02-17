@@ -39,12 +39,10 @@ biggest challenge: make it easy to tailor a root criterion.
 
 
 # Other Criteria:
-# Pattern matching directories
 
-
+pattern matching directories
 
 # known use cases
-
 
 https://github.com/search/advanced
 

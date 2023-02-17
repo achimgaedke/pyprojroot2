@@ -23,4 +23,5 @@ HERE_CRITERION = py_root_criterion
 here = HERE_CRITERION.find_file
 
 # that's from https://github.com/chendaniely/pyprojroot/blob/dev/src/pyprojroot/here.py#L29
+# do I want to support this?
 get_here = HERE_CRITERION.find_root_with_reason

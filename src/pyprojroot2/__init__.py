@@ -14,9 +14,10 @@ as_root_criterion = RootCriterion
 # and where does the "here" functionality go?
 
 __all__ = [
-    "here",
+    "as_root_criterion",
     "has_file",
     "has_dir",
+    "here",
     "matches_glob",
     "find_root",
     "find_root_with_reason",

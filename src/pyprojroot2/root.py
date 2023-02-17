@@ -19,7 +19,7 @@ class RootCriterion:
 
     First the criteria specified as unnamed parameters are tested, then the
     named parameter in order of specification. The "unnamed" criteria will be
-    automatically named as "criterion-0", "criterion-1", and so on...
+    automatically named as ``criterion-0``, ``criterion-1``, and so on...
 
     ``criteria_first``:
     By default (``cirteria_first=True``) the criteria are tested in sequence and
@@ -32,9 +32,9 @@ class RootCriterion:
 
     ``resolve_path``: by default (``False``), ``os.path.abspath()`` is used to
     determine the absolute start path. This is expected to give the most
-    intuitive results in most situations. (See also caveats of using
-    ``os.path.normpath``.) If set to ``True` ``pathlib.resolve()`` is used,
-    which also resolves symlinks.
+    intuitive results in most situations. But see the caveats of using
+    ``os.path.normpath``. If set to ``True` ``pathlib.resolve()`` is used,
+    which resolves symlinks.
     """
 
     def __init__(
@@ -103,7 +103,14 @@ class RootCriterion:
 
     def find_file(self, *args: str, path: str = ".") -> pathlib.Path:
         """
-        Find a file's path relative to the project's root.
+        Find a file's (or directory's) path relative to the project's root.
+
+        The file path components are passed as arguments.
+
+        Specify ``path`` if you want to start the root search at an alternative
+        ``path``. By default the current work directory is used.
+
+        Raises FileNotFoundError if no cirteria were met.
         """
         # warning if file/path doesn't exist?!
         return pathlib.Path(self.find_root(path), *args)
@@ -138,11 +145,13 @@ class RootCriterion:
         """
         List the names of all root criteria met. Use as
 
-        ```python
-        "git repository" in root_c.list_met_criteria_names()
+        ```python3
+        "is_git_vcs" in root_c.list_met_criteria_names()
         ```
 
         to figure out what type of project you're working in.
+
+        If no criteria are met, the list is empty.
         """
         return [
             name
