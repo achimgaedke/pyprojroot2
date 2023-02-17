@@ -17,7 +17,7 @@ from pyprojroot2.here import here
     ],
 )
 @pytest.mark.parametrize("child_dir", ["stuff", "src", "data", "data/hello"])
-def test_here(tmp_path, project_files, file_type, child_dir):
+def test_here(tmp_path, project_files, file_type, child_dir) -> None:
     """
     This test uses pytest's tmp_path facilities to create a simulated project
     directory, and checks that the path is correct.

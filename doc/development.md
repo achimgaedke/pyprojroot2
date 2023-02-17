@@ -34,7 +34,7 @@ class MyCriterion(Criterion):
         # your checking code here
         return True
 
-    def description(self) -> str:
+    def describe(self) -> str:
         # customise the reason for meeting this criterion
         return f"My criterion working on `{self.property1}`"
 ```

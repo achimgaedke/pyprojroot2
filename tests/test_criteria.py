@@ -141,13 +141,13 @@ def test_has_file_cirterion() -> None:
             "criterion: has a file `my_file` and file contains a line matching the regular expression `[ac]` in the first 1 line/s",
         )
 
-        # test the description function
+        # test the describe method
         assert (
-            HasFile("my_file", "a", 1, fixed=True).description()
+            HasFile("my_file", "a", 1, fixed=True).describe()
             == "has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s"
         )
         assert (
-            HasFile("my_file", "[ab]", 3).description()
+            HasFile("my_file", "[ab]", 3).describe()
             == "has a file `my_file` and file contains a line matching the regular expression `[ab]` in the first 3 line/s"
         )
 
@@ -189,9 +189,9 @@ def test_pattern_filenames() -> None:
         assert not HasFilePattern("^_fil").is_met(test_dir)
         assert not HasFilePattern("[ab]").is_met(test_dir)
 
-        assert HasFileGlob("my_*").description() == "has a file matching `my_*`"
+        assert HasFileGlob("my_*").describe() == "has a file matching `my_*`"
         assert (
-            HasFilePattern("_fil").description()
+            HasFilePattern("_fil").describe()
             == "has a file matching the regular expression `_fil`"
         )
 
@@ -206,7 +206,7 @@ def test_any_criteria() -> None:
         assert not combined_criteria.is_met(test_dir / "b")
 
         assert (
-            combined_criteria.description()
+            combined_criteria.describe()
             == "has the basename `a` or has a file `my_file`"
         )
 
@@ -220,7 +220,7 @@ def test_all_criteria() -> None:
         assert not (combined_criteria & HasDir("b")).is_met(test_dir)
 
         assert (
-            combined_criteria.description()
+            combined_criteria.describe()
             == "contains the directory `a` and has a file `my_file`"
         )
         combined_root, combined_reason = combined_criteria.find_root_with_reason(

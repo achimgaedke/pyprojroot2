@@ -16,11 +16,11 @@ class Criterion(abc.ABC):
     A criterion tests whether it applies to a given path.
     """
 
-    def description(self) -> str:
+    def describe(self) -> str:
         return type(self).__name__
 
     def __repr__(self) -> str:
-        return f"<Criterion: {self.description().capitalize()}>"
+        return f"<Criterion: {self.describe().capitalize()}>"
 
     def find_root(self, *args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
         # convenience function
@@ -49,7 +49,7 @@ class Criterion(abc.ABC):
 
     def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
         if self.is_met(dir):
-            return self.description()
+            return self.describe()
         return False
 
     def __or__(self, other: "Criterion") -> "AnyCriteria":
@@ -118,7 +118,7 @@ class HasFile(Criterion):
 
         return any(line == self.contents for line in self.read_lines_from_file(file))
 
-    def contents_description(self) -> str:
+    def describe_contents_matching(self) -> str:
         if self.contents is None:
             return ""
 
@@ -138,10 +138,10 @@ class HasFile(Criterion):
         full_filename = pathlib.Path(dir) / self.filename
         return full_filename.is_file() and self.check_file_contents(full_filename)
 
-    def description(self) -> str:
+    def describe(self) -> str:
         pattern_description = f"has a file `{self.filename}`"
         if self.contents is not None:
-            pattern_description += f" and {self.contents_description()}"
+            pattern_description += f" and {self.describe_contents_matching()}"
         return pattern_description
 
 
@@ -176,12 +176,12 @@ class HasFilePattern(HasFile):
                 return True
         return False
 
-    def description(self) -> str:
+    def describe(self) -> str:
         pattern_description = (
             f"has a file matching the regular expression `{self.filename}`"
         )
         if self.contents is not None:
-            pattern_description += f" and {self.contents_description()}"
+            pattern_description += f" and {self.describe_contents_matching()}"
         return pattern_description
 
 
@@ -211,10 +211,10 @@ class HasFileGlob(HasFile):
                 return True
         return False
 
-    def description(self) -> str:
+    def describe(self) -> str:
         pattern_description = f"has a file matching `{self.filename}`"
         if self.contents is not None:
-            pattern_description += f" and {self.contents_description()}"
+            pattern_description += f" and {self.describe_contents_matching()}"
         return pattern_description
 
 
@@ -230,7 +230,7 @@ class HasDir(Criterion):
     def is_met(self, dir: PathSpec) -> bool:
         return (pathlib.Path(dir) / self.dirname).is_dir()
 
-    def description(self) -> str:
+    def describe(self) -> str:
         return f"contains the directory `{self.dirname}`"
 
 
@@ -252,7 +252,7 @@ class HasEntry(Criterion):
     def is_met(self, dir: PathSpec) -> bool:
         return (pathlib.Path(dir) / self.entryname).exists()
 
-    def description(self) -> str:
+    def describe(self) -> str:
         return f"contains the entry `{self.entryname}`"
 
 
@@ -271,7 +271,7 @@ class HasBasename(Criterion):
     def is_met(self, dir: PathSpec) -> bool:
         return self.basename == pathlib.Path(dir).name
 
-    def description(self) -> str:
+    def describe(self) -> str:
         return f"has the basename `{self.basename}`"
 
 
@@ -284,7 +284,7 @@ class IsCwd(Criterion):
     def is_met(self, dir: PathSpec) -> bool:
         return pathlib.Path.cwd().resolve() == pathlib.Path(dir).resolve()
 
-    def description(self) -> str:
+    def describe(self) -> str:
         return "is the current working directory"
 
 
@@ -299,8 +299,8 @@ class AnyCriteria(Criterion):
         self.criteria = criteria
         super().__init__()
 
-    def description(self) -> str:
-        return " or ".join(c.description() for c in self.criteria)
+    def describe(self) -> str:
+        return " or ".join(c.describe() for c in self.criteria)
 
     def is_met(self, dir: PathSpec) -> bool:
         return any(c.is_met(dir) for c in self.criteria)
@@ -329,8 +329,8 @@ class AllCriteria(Criterion):
         self.criteria = criteria
         super().__init__()
 
-    def description(self) -> str:
-        return " and ".join(c.description() for c in self.criteria)
+    def describe(self) -> str:
+        return " and ".join(c.describe() for c in self.criteria)
 
     def is_met(self, dir: PathSpec) -> bool:
         return all(c.is_met(dir) for c in self.criteria)
