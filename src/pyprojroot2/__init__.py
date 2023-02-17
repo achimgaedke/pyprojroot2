@@ -7,7 +7,8 @@ find_root_with_reason = HERE_CRITERION.find_root_with_reason
 as_root_criterion = RootCriterion
 
 # TODO:
-# find match for CriterionFunction, Criterion, Criteria, PathSpec
+# find match for CriterionFunction, Criterion, Criteria
+# criteria.PathSpec - do I want to expose this?
 
 # todo: understand what is useful here...
 # either rprojroot's stuff or pyprojroot's stuff?

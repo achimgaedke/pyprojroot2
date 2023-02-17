@@ -6,6 +6,8 @@ import typing
 if typing.TYPE_CHECKING:
     from .root import RootCriterion
 
+PathSpec = typing.Union[str, pathlib.Path]
+
 
 class Criterion(abc.ABC):
     """
@@ -41,11 +43,11 @@ class Criterion(abc.ABC):
         return RootCriterion(criterion=self)
 
     @abc.abstractmethod
-    def is_met(self, dir: pathlib.Path) -> bool:
+    def is_met(self, dir: PathSpec) -> bool:
         # the criterion is met for this path
         ...
 
-    def is_met_with_reason(self, dir: pathlib.Path) -> typing.Union[str, bool]:
+    def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
         if self.is_met(dir):
             return self.description()
         return False
@@ -75,7 +77,7 @@ class HasFile(Criterion):
 
     def __init__(
         self,
-        filename: str,
+        filename: PathSpec,
         contents: typing.Optional[str] = None,
         n: int = -1,
         fixed: bool = False,
@@ -86,7 +88,7 @@ class HasFile(Criterion):
         self.max_lines_to_search = int(n)
         super().__init__()
 
-    def read_lines_from_file(self, file: pathlib.Path) -> typing.Iterator[str]:
+    def read_lines_from_file(self, file: PathSpec) -> typing.Iterator[str]:
         """
         read the lines, strip off the newline at the end and stop at max_lines_to_search
         """
@@ -103,7 +105,7 @@ class HasFile(Criterion):
                     yield line
                 max_lines -= 1
 
-    def check_file_contents(self, file: pathlib.Path) -> bool:
+    def check_file_contents(self, file: PathSpec) -> bool:
         """
         check the contents of the file
         """
@@ -132,7 +134,7 @@ class HasFile(Criterion):
 
         return description
 
-    def is_met(self, dir: pathlib.Path) -> bool:
+    def is_met(self, dir: PathSpec) -> bool:
         full_filename = pathlib.Path(dir) / self.filename
         return full_filename.is_file() and self.check_file_contents(full_filename)
 
@@ -160,11 +162,12 @@ class HasFilePattern(HasFile):
         self.contents = contents
         self.fixed = bool(fixed)
         self.max_lines_to_search = int(n)
-        super().__init__(pattern)
+        super().__init__(str(pattern))
 
-    def is_met(self, dir: pathlib.Path) -> bool:
+    def is_met(self, dir: PathSpec) -> bool:
+        assert isinstance(self.filename, str)
         pattern = re.compile(self.filename)
-        for full_filename in dir.iterdir():
+        for full_filename in pathlib.Path(dir).iterdir():
             if (
                 full_filename.is_file()
                 and pattern.search(full_filename.name)
@@ -199,10 +202,11 @@ class HasFileGlob(HasFile):
         self.contents = contents
         self.fixed = bool(fixed)
         self.max_lines_to_search = int(n)
-        super().__init__(pattern)
+        super().__init__(str(pattern))
 
-    def is_met(self, dir: pathlib.Path) -> bool:
-        for full_filename in dir.glob(self.filename):
+    def is_met(self, dir: PathSpec) -> bool:
+        assert isinstance(self.filename, str)
+        for full_filename in pathlib.Path(dir).glob(self.filename):
             if full_filename.is_file() and self.check_file_contents(full_filename):
                 return True
         return False
@@ -219,11 +223,11 @@ class HasDir(Criterion):
     Match if a directory of the given name is present.
     """
 
-    def __init__(self, dirname: str):
+    def __init__(self, dirname: PathSpec):
         self.dirname = dirname
         super().__init__()
 
-    def is_met(self, dir: pathlib.Path) -> bool:
+    def is_met(self, dir: PathSpec) -> bool:
         return (pathlib.Path(dir) / self.dirname).is_dir()
 
     def description(self) -> str:
@@ -241,11 +245,11 @@ class HasEntry(Criterion):
     ``pathlib.Path.joinpath``. Consider using ``HasDir`` instead.
     """
 
-    def __init__(self, entryname: str):
+    def __init__(self, entryname: PathSpec):
         self.entryname = entryname
         super().__init__()
 
-    def is_met(self, dir: pathlib.Path) -> bool:
+    def is_met(self, dir: PathSpec) -> bool:
         return (pathlib.Path(dir) / self.entryname).exists()
 
     def description(self) -> str:
@@ -260,12 +264,12 @@ class HasBasename(Criterion):
     The directory's basename is equal to the name specified.
     """
 
-    def __init__(self, basename: str):
+    def __init__(self, basename: PathSpec):
         self.basename = basename
         super().__init__()
 
-    def is_met(self, dir: pathlib.Path) -> bool:
-        return self.basename == dir.name
+    def is_met(self, dir: PathSpec) -> bool:
+        return self.basename == pathlib.Path(dir).name
 
     def description(self) -> str:
         return f"has the basename `{self.basename}`"
@@ -277,8 +281,8 @@ class IsCwd(Criterion):
     for the project root.
     """
 
-    def is_met(self, dir: pathlib.Path) -> bool:
-        return pathlib.Path.cwd().resolve() == dir.resolve()
+    def is_met(self, dir: PathSpec) -> bool:
+        return pathlib.Path.cwd().resolve() == pathlib.Path(dir).resolve()
 
     def description(self) -> str:
         return "is the current working directory"
@@ -298,10 +302,10 @@ class AnyCriteria(Criterion):
     def description(self) -> str:
         return " or ".join(c.description() for c in self.criteria)
 
-    def is_met(self, dir: pathlib.Path) -> bool:
+    def is_met(self, dir: PathSpec) -> bool:
         return any(c.is_met(dir) for c in self.criteria)
 
-    def is_met_with_reason(self, dir: pathlib.Path) -> typing.Union[str, bool]:
+    def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
         for c in self.criteria:
             c_met = c.is_met_with_reason(dir)
             if isinstance(c_met, str):
@@ -328,10 +332,10 @@ class AllCriteria(Criterion):
     def description(self) -> str:
         return " and ".join(c.description() for c in self.criteria)
 
-    def is_met(self, dir: pathlib.Path) -> bool:
+    def is_met(self, dir: PathSpec) -> bool:
         return all(c.is_met(dir) for c in self.criteria)
 
-    def is_met_with_reason(self, dir: pathlib.Path) -> typing.Union[str, bool]:
+    def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
         reasons: typing.List[str] = []
         for c in self.criteria:
             reason = c.is_met_with_reason(dir)

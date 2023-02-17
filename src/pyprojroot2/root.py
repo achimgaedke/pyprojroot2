@@ -2,7 +2,7 @@ import os.path
 import pathlib
 import typing
 
-from .criteria import Criterion, HasEntry
+from .criteria import Criterion, HasEntry, PathSpec
 
 
 class RootCriterion:
@@ -39,10 +39,10 @@ class RootCriterion:
 
     def __init__(
         self,
-        *criteria: typing.Union[Criterion, str],
+        *criteria: typing.Union[Criterion, PathSpec],
         cirteria_first: bool = True,
         resolve_path: bool = False,
-        **named_criteria: typing.Union[Criterion, str],
+        **named_criteria: typing.Union[Criterion, PathSpec],
     ):
         self.criteria: typing.List[Criterion] = [
             self.coerce_criteria(c) for c in criteria
@@ -53,7 +53,7 @@ class RootCriterion:
         self.criteria_first = cirteria_first
         self.resolve_path = resolve_path
 
-    def as_start_path(self, path: str = ".") -> pathlib.Path:
+    def as_start_path(self, path: PathSpec = ".") -> pathlib.Path:
         if self.resolve_path:
             abspath = pathlib.Path(path).resolve()
         else:
@@ -63,13 +63,13 @@ class RootCriterion:
         return abspath
 
     @staticmethod
-    def coerce_criteria(criterion: typing.Union[Criterion, str]) -> Criterion:
-        if isinstance(criterion, str):
+    def coerce_criteria(criterion: typing.Union[Criterion, PathSpec]) -> Criterion:
+        if isinstance(criterion, (str, pathlib.Path)):
             return HasEntry(criterion)
         else:
             return criterion
 
-    def iter_parents(self, path: str) -> typing.Iterator[pathlib.Path]:
+    def iter_parents(self, path: PathSpec) -> typing.Iterator[pathlib.Path]:
         # No MAX_DEPTH limit, as path shouldn't be able have infinite loops
         # Todo: Resolve or abspath or os.path.normalise ?
         start_path = self.as_start_path(path)
@@ -82,7 +82,7 @@ class RootCriterion:
         yield from self.named_criteria.items()
 
     def iter_criteria_parents(
-        self, path: str
+        self, path: PathSpec
     ) -> typing.Iterator[typing.Tuple[str, Criterion, pathlib.Path]]:
         if self.criteria_first:
             # rprojroot
@@ -128,7 +128,9 @@ class RootCriterion:
 
         raise FileNotFoundError("could not find the project root")
 
-    def find_root_with_reason(self, path: str = ".") -> typing.Tuple[pathlib.Path, str]:
+    def find_root_with_reason(
+        self, path: PathSpec = "."
+    ) -> typing.Tuple[pathlib.Path, str]:
         """
         Implementation of find_root returning the path as well as the reason.
 
@@ -141,7 +143,7 @@ class RootCriterion:
 
         raise FileNotFoundError("could not find the project root")
 
-    def list_met_criteria_names(self, path: str = ".") -> typing.List[str]:
+    def list_met_criteria_names(self, path: PathSpec = ".") -> typing.List[str]:
         """
         List the names of all root criteria met. Use as
 
