@@ -23,6 +23,10 @@ how to set the default root criterion?
 Biggest challenge: make it easy to tailor a root criterion.
 Second challenge: provide convenience and legacy functions at the correct location.
 
+Consider using OrderedDict as base class, exposing methods to users.
+Unnamed parameters will be automatically named and put into the dict at the
+beginning.
+
 Measure performance...
 
 ## Missing Criteria:

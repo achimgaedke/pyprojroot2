@@ -12,6 +12,36 @@ Agenda:
 * (future) distribution to pypi and conda as `pyprojroot2`
 * (future) build up cookbook and reference documentation
 
+## Create new criteria:
+
+Use this template:
+
+```python3
+from pyprojroot2.criteria import Criterion, PathSpec
+
+class MyCriterion(Criterion):
+    """
+    Add some documentation about the file structure
+    you want to match...
+    """
+
+    def __init__(self, some_params):
+        self.property1 = some_params
+        # and so on
+        super().__init__()
+
+    def is_met(self, path: PathSpec=".") -> bool:
+        # your checking code here
+        return True
+
+    def description(self) -> str:
+        # customise the reason for meeting this criterion
+        return f"My criterion working on `{self.property1}`"
+```
+
+When submitting as a pull request, make sure unittests are added.
+The more generic/versatle or more likely used by many... the better.
+
 ## Development Commands
 
 ```shell
@@ -24,4 +54,4 @@ PYTHONPATH=src python -m pytest --cov-report term-missing --cov=pyprojroot2  tes
 python -m mypy src/pyprojroot2
 ```
 
-See also the `Makefile`.
+The `Makefile` provides the `build`, `fmt` and `lint` targets.

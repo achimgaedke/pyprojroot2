@@ -46,6 +46,8 @@ you can specify it:
 data_path = here("data", path="/humungous/partion/some/note/book/file.ipynb")
 ```
 
+If no root could be determined, the exception `FileNotFoundError` is raised.
+
 Want to know what `pyprojroot2` chose and why?
 
 ```python3
@@ -54,19 +56,19 @@ from pyprojroot2 import find_root_with_reason
 find_root_with_reason()
 ```
 
-If no root could be determined, the exception `FileNotFoundError` is raised.
+Todo: Outupt - test it!
 
 ## Predefined root criteria
 
-A variety of criteria are available at `predefined_roots`.
+A variety of criteria are available in the submodule `predefined_roots`.
 
 ```python
-from pyprojroot.predefined_roots import r_root_criterion
+from pyprojroot2.predefined_roots import r_root_criterion
 
 r_root_criterion.find_root()
 ```
 
-This will find a project root like `rprojroot` would do it.
+This finds a project root like `rprojroot` does it.
 
 The criterion `py_root_criterion` is used by `here` - and serves most python
 projects or data-science notebook project out of the box.
@@ -87,7 +89,7 @@ Step 2:
 Bundle different project criteria together to a `RootCriterion`,
 so if one isn't found, the next one is searched for.
 
-This is even simpler in an example:
+This is easy to elaborate in an example:
 
 ```python3
 from pyprojroot2 import as_root_criterion
@@ -102,9 +104,9 @@ my_root = as_root_criterion(
 my_data = my_root("data")
 ```
 
-This root criterion will first look for a git root, if that isn't found,
-then move on to finding a directory with a `data` directory and
-finally if `data` couldn't be found, look out for `.here`.
+This root criterion will first look for a git root in all parent directories,
+if that isn't found anywhere, then move on to finding a directory with a
+`data` directory and finally if `data` couldn't be found, look out for `.here`.
 
 If none of those could be located, then a `FileNotFoundError` exception
 is raised.
