@@ -12,6 +12,7 @@ from pyprojroot2.criteria import (
     IsCwd,
     AnyCriteria,
     HasBasename,
+    HasEntry,
     AllCriteria,
     HasDir,
     HasFileGlob,
@@ -130,24 +131,24 @@ def test_has_file_cirterion() -> None:
             test_dir
         ) == (
             pathlib.Path(test_dir).resolve(),
-            "criterion: has a file `my_file` and contains a line with the contents `a` in the first 1 line/s",
+            "criterion: has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s",
         )
 
         assert HasFile("my_file", "[ac]", 1, fixed=False).find_root_with_reason(
             test_dir
         ) == (
             pathlib.Path(test_dir).resolve(),
-            "criterion: has a file `my_file` and contains a line matching the regular expression `[ac]` in the first 1 line/s",
+            "criterion: has a file `my_file` and file contains a line matching the regular expression `[ac]` in the first 1 line/s",
         )
 
         # test the description function
         assert (
             HasFile("my_file", "a", 1, fixed=True).description()
-            == "has a file `my_file` and contains a line with the contents `a` in the first 1 line/s"
+            == "has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s"
         )
         assert (
             HasFile("my_file", "[ab]", 3).description()
-            == "has a file `my_file` and contains a line matching the regular expression `[ab]` in the first 3 line/s"
+            == "has a file `my_file` and file contains a line matching the regular expression `[ab]` in the first 3 line/s"
         )
 
 
@@ -156,6 +157,21 @@ def test_current_dir() -> None:
         with chdir(test_dir):
             assert IsCwd().is_met(test_dir)
             assert test_dir.resolve() == IsCwd().find_root(test_dir / "a" / "b" / "c")
+
+def test_has_entry() -> None:
+    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
+        assert HasEntry("a").is_met(test_dir)
+        assert HasEntry("a/").is_met(test_dir)
+        assert HasEntry(".").is_met(test_dir)  # that's an odd case?!
+        assert HasEntry("my_file").is_met(test_dir)
+        assert HasEntry("my_file/").is_met(
+            test_dir
+        )  # oddly this succeeds, though it is a file
+        assert HasEntry("my_file/.").is_met(
+            test_dir
+        )  # oddly this succeeds, though it is a file
+        assert not HasEntry("b").is_met(test_dir)
+        assert HasEntry("a").is_met_with_reason(test_dir) == "contains the entry `a`"
 
 
 def test_has_basename() -> None:

@@ -120,7 +120,7 @@ class HasFile(Criterion):
         if self.contents is None:
             return ""
 
-        description = "contains "
+        description = "file contains "
 
         if self.fixed:
             description += f"a line with the contents `{self.contents}`"
@@ -230,9 +230,29 @@ class HasDir(Criterion):
         return f"contains the directory `{self.dirname}`"
 
 
-# Other Criteria:
-# Pattern matching directories
-# Pattern matching entries (no matter whether file or directory)
+class HasEntry(Criterion):
+    """
+    Match if a filesystem entry (file/directory/link/...) of this name exists.
+
+    Note:
+
+    ``/`` or ``/.`` at the end of the entryname are stripped off, i.e. oddly
+    ``myfile/`` will match a file - this is a sideffect of python's
+    ``pathlib.Path.joinpath``. Consider using ``HasDir`` instead.
+    """
+
+    def __init__(self, entryname: str):
+        self.entryname = entryname
+        super().__init__()
+
+    def is_met(self, dir: pathlib.Path) -> bool:
+        return (pathlib.Path(dir) / self.entryname).exists()
+
+    def description(self) -> str:
+        return f"contains the entry `{self.entryname}`"
+
+
+Exists = HasEntry
 
 
 class HasBasename(Criterion):
