@@ -102,7 +102,7 @@ def test_has_file_cirterion() -> None:
         assert not HasFile("my_file.txt", "[bc]", n=1).is_met(test_dir)
 
         # test direct use as root criterion
-        assert test_dir.resolve() == HasFile("my_file").find_root(test_dir / "a/b/c/")
+        assert test_dir == HasFile("my_file").find_root(test_dir / "a/b/c/")
 
         my_file = HasFile("my_file").find_file("my_file", path=test_dir)
         assert isinstance(my_file, pathlib.Path)
@@ -124,20 +124,20 @@ def test_has_file_cirterion() -> None:
             HasFile("my_file_not there").find_root_with_reason(test_dir)
 
         assert HasFile("my_file").find_root_with_reason(test_dir) == (
-            pathlib.Path(test_dir).resolve(),
+            pathlib.Path(test_dir),
             "criterion: has a file `my_file`",
         )
         assert HasFile("my_file", "a", 1, fixed=True).find_root_with_reason(
             test_dir
         ) == (
-            pathlib.Path(test_dir).resolve(),
+            pathlib.Path(test_dir),
             "criterion: has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s",
         )
 
         assert HasFile("my_file", "[ac]", 1, fixed=False).find_root_with_reason(
             test_dir
         ) == (
-            pathlib.Path(test_dir).resolve(),
+            pathlib.Path(test_dir),
             "criterion: has a file `my_file` and file contains a line matching the regular expression `[ac]` in the first 1 line/s",
         )
 
@@ -156,7 +156,8 @@ def test_current_dir() -> None:
     with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
         with chdir(test_dir):
             assert IsCwd().is_met(test_dir)
-            assert test_dir.resolve() == IsCwd().find_root(test_dir / "a" / "b" / "c")
+            assert test_dir == IsCwd().find_root(test_dir / "a" / "b" / "c")
+
 
 def test_has_entry() -> None:
     with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
@@ -225,7 +226,7 @@ def test_all_criteria() -> None:
         combined_root, combined_reason = combined_criteria.find_root_with_reason(
             test_dir / "a/b"
         )
-        assert combined_root == test_dir.resolve()
+        assert combined_root == test_dir
         assert (
             combined_reason
             == "criterion: contains the directory `a` and has a file `my_file`"
@@ -237,5 +238,5 @@ def test_all_criteria() -> None:
 
         assert combined_all_any.find_root(test_dir / "a")
         combined_root, reason = combined_all_any.find_root_with_reason(test_dir / "a")
-        assert combined_root == test_dir.resolve()
+        assert combined_root == test_dir
         assert reason == f"criterion: has the basename `{test_dir.name}`"
