@@ -2,31 +2,24 @@ import os.path
 import pathlib
 import typing
 
-from .criteria import Criterion, HasEntry, PathSpec
+from .criteria import Criterion, as_criterion, PathSpec
 
 
-class RootCriterion:
+class RootCriterion(typing.OrderedDict[str, Criterion]):
     """
     A root criterion is a collection of criteria in order to determine the
     project's root directory. The first directory, which matches a criterion is
     returned as root directory.
 
-    If a string is given, the existence of the file entry is tested, i.e. the
-    string is converted to a ``HasEntry`` criterion.
-
     The test order matters (though for most projects this difference in the
-    search algorithm is not important):
-
-    First the criteria specified as unnamed parameters are tested, then the
-    named parameter in order of specification. The "unnamed" criteria will be
-    automatically named as ``criterion-0``, ``criterion-1``, and so on...
+    search algorithm is not important).
 
     ``criteria_first``:
-    By default (``cirteria_first=True``) the criteria are tested in sequence and
+    By default (``criteria_first=True``) the criteria are tested in sequence and
     the path of the first matching criterium is selected, prefering the criteria
     tested first. This is behavior of ``rprojroot``.
 
-    ``pyprojroot`` tests all each parent directory whether any cirteria matches,
+    ``pyprojroot`` tests all each parent directory whether any criteria matches,
     therefore prefers lower subdirectories (the ones with more path components).
     Set ``criteria_first=False`` to choose this behaviour.
 
@@ -37,21 +30,35 @@ class RootCriterion:
     which resolves symlinks.
     """
 
+    criteria_first: bool = True
+    resolve_path: bool = False
+
     def __init__(
         self,
-        *criteria: typing.Union[Criterion, PathSpec],
-        cirteria_first: bool = True,
-        resolve_path: bool = False,
-        **named_criteria: typing.Union[Criterion, PathSpec],
+        criteria: typing.Union[
+            "RootCriterion",
+            typing.Dict[str, Criterion],
+        ],
+        criteria_first: typing.Optional[bool] = None,
+        resolve_path: typing.Optional[bool] = None,
     ):
-        self.criteria: typing.List[Criterion] = [
-            self.coerce_criteria(c) for c in criteria
-        ]
-        self.named_criteria = {
-            k: self.coerce_criteria(v) for k, v in named_criteria.items()
-        }
-        self.criteria_first = cirteria_first
-        self.resolve_path = resolve_path
+        criteria_dict = {}
+
+        if isinstance(criteria, RootCriterion):
+            # copy constructor
+            self.criteria_first = criteria.criteria_first
+            self.resolve_path = criteria.resolve_path
+            criteria_dict = {k: as_criterion(v) for k, v in criteria.items()}
+        elif isinstance(criteria, dict):
+            criteria_dict = {k: as_criterion(v) for k, v in criteria.items()}
+        else:
+            criteria_dict = as_root_criterion(criteria)
+
+        super().__init__(criteria_dict)
+        if criteria_first is not None:
+            self.criteria_first = criteria_first
+        if resolve_path is not None:
+            self.resolve_path = resolve_path
 
     def as_start_path(self, path: PathSpec = ".") -> pathlib.Path:
         if self.resolve_path:
@@ -62,24 +69,11 @@ class RootCriterion:
             return abspath.parent
         return abspath
 
-    @staticmethod
-    def coerce_criteria(criterion: typing.Union[Criterion, PathSpec]) -> Criterion:
-        if isinstance(criterion, (str, pathlib.Path)):
-            return HasEntry(criterion)
-        else:
-            return criterion
-
     def iter_parents(self, path: PathSpec) -> typing.Iterator[pathlib.Path]:
         # No MAX_DEPTH limit, as path shouldn't be able have infinite loops
-        # Todo: Resolve or abspath or os.path.normalise ?
         start_path = self.as_start_path(path)
         yield start_path
         yield from start_path.parents
-
-    def iter_criteria(self) -> typing.Iterator[typing.Tuple[str, Criterion]]:
-        for i, criterion in enumerate(self.criteria):
-            yield f"criterion-{i}", criterion
-        yield from self.named_criteria.items()
 
     def iter_criteria_parents(
         self, path: PathSpec
@@ -87,21 +81,20 @@ class RootCriterion:
         if self.criteria_first:
             # rprojroot
             dir_list = list(self.iter_parents(path))
-            for name, criterion in self.iter_criteria():
+            for name, criterion in self.items():
                 for dir in dir_list:
                     yield name, criterion, dir
         else:
             # pyprojroot
-            criteria_list = list(self.iter_criteria())
             for dir in self.iter_parents(path):
-                for name, criterion in criteria_list:
+                for name, criterion in self.items():
                     yield name, criterion, dir
 
     def __call__(self, *args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
         # convenience function for find_file
         return self.find_file(*args, **kwargs)
 
-    def find_file(self, *args: str, path: str = ".") -> pathlib.Path:
+    def find_file(self, *args: str, path: PathSpec = ".") -> pathlib.Path:
         """
         Find a file's (or directory's) path relative to the project's root.
 
@@ -110,17 +103,17 @@ class RootCriterion:
         Specify ``path`` if you want to start the root search at an alternative
         ``path``. By default the current work directory is used.
 
-        Raises FileNotFoundError if no cirteria were met.
+        Raises FileNotFoundError if no criteria were met.
         """
         # warning if file/path doesn't exist?!
         return pathlib.Path(self.find_root(path), *args)
 
-    def find_root(self, path: str = ".") -> pathlib.Path:
+    def find_root(self, path: PathSpec = ".") -> pathlib.Path:
         """
         Find the project's root using the criteria. The first match will be
         returned.
 
-        Raises FileNotFoundError if no cirteria were met.
+        Raises FileNotFoundError if no criteria were met.
         """
         for _, criterion, dir in self.iter_criteria_parents(path):
             if criterion.is_met(dir):
@@ -134,7 +127,7 @@ class RootCriterion:
         """
         Implementation of find_root returning the path as well as the reason.
 
-        Raises FileNotFoundError if no cirteria were met.
+        Raises FileNotFoundError if no criteria were met.
         """
         for name, criterion, dir in self.iter_criteria_parents(path):
             reason = criterion.is_met_with_reason(dir)
@@ -143,20 +136,64 @@ class RootCriterion:
 
         raise FileNotFoundError("could not find the project root")
 
-    def list_met_criteria_names(self, path: PathSpec = ".") -> typing.List[str]:
+    def find_all_root_names_and_dirs(
+        self, path: PathSpec = "."
+    ) -> typing.Dict[str, pathlib.Path]:
         """
         List the names of all root criteria met. Use as
 
         ```python3
-        "is_git_vcs" in root_c.list_met_criteria_names()
+        "is_git_vcs" in root_c.find_all_root_names_and_dirs()
         ```
 
-        to figure out what type of project you're working in.
+        to figure out what type of projects you're working in.
 
-        If no criteria are met, the list is empty.
+        If no criteria are met, the dictionary is empty.
         """
-        return [
-            name
+        return {
+            name: dir
             for name, criterion, dir in self.iter_criteria_parents(path)
             if criterion.is_met(dir)
-        ]
+        }
+
+
+def as_root_criterion(
+    criteria: typing.Any,
+    criteria_first: typing.Optional[bool] = True,
+    resolve_path: typing.Optional[bool] = False,
+) -> RootCriterion:
+    """
+    If a string is given, the existence of the file entry is tested, i.e. the
+    string is converted to a ``HasEntry`` criterion.
+    """
+    if isinstance(criteria, RootCriterion):
+        return RootCriterion(
+            criteria, criteria_first=criteria_first, resolve_path=resolve_path
+        )
+    if isinstance(criteria, dict):
+        return RootCriterion(
+            {k: as_criterion(v) for k, v in criteria.items()},
+            criteria_first=criteria_first,
+            resolve_path=resolve_path,
+        )
+    if isinstance(criteria, (Criterion, str)):
+        return RootCriterion(
+            {"criterion": as_criterion(criteria)},
+            criteria_first=criteria_first,
+            resolve_path=resolve_path,
+        )
+    if isinstance(criteria, typing.Sequence):
+        return RootCriterion(
+            {
+                f"criterion-{i}": as_criterion(criterion)
+                for i, criterion in enumerate(criteria)
+            },
+            criteria_first=criteria_first,
+            resolve_path=resolve_path,
+        )
+    # fallback, assume it is a single criterion
+    return RootCriterion(
+        {"criterion": as_criterion(criteria)},
+        criteria_first=criteria_first,
+        resolve_path=resolve_path,
+    )

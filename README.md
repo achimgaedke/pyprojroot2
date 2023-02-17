@@ -1,17 +1,17 @@
 # Origin / Refactor
 
 This project is a complete rewrite of [Daniel Chen's pyprojroot](https://github.com/chendaniely/pyprojroot)
-inspired the issues and looking at the `TODO`s in the code.
+inspired by  the issues in the tracker and the `TODO`s in the code.
 
 ## Install
 
-Try it out,
+Try it out:
 
 ```shell
 pip3 install git+https://github.com/achimgaedke/pyprojroot2.git@pyprojroot2-rewrite
 ```
 
-it should work as a drop in replacement for `pyprojroot`.
+It works as a drop in replacement for `pyprojroot`:
 
 ```python3
 import pyprojroot2 as pyprojroot
@@ -22,12 +22,15 @@ required.
 
 ## Use `here`
 
-`here` is ready to use, find your directories relative to your project:
+`here` is straight forward to use, simply find your directories relative to
+your project:
 
 ```python3
 from pyprojroot2 import here
 
 data_path = here("data")
+
+pd.read_csv(data_path / "dataset.csv")
 ```
 
 The project is detected with the help of a (pythonic) set of criteria starting
@@ -96,9 +99,11 @@ from pyprojroot2 import as_root_criterion
 from pyprojroot2.predefined_criteria import is_git_root, has_dir
 
 my_root = as_root_criterion(
-    is_git=is_git_root,
-    has_data=has_dir("data"),
-    has_here_file=".here", # will match any entry (file or dir)
+    {
+        "is_git": is_git_root,
+        "has_data": has_dir("data"),
+        "has_here_file": ".here", # will match any entry (file or dir)
+    }
 )
 
 my_data = my_root("data")
@@ -116,12 +121,26 @@ could write:
 
 ```python3
 my_root = as_root_criterion(
-    is_git_with_data=is_git_root & has_dir("data"),
-    has_here_file=".here",
+    {
+        "is_git_with_data": is_git_root & has_dir("data"),
+        "has_here_file": ".here",
+    }
 )
 ```
 
 Keeping the `.here` file as a fallback option.
+
+The root criteria can be manipulated using the OrderedDict methods:
+
+```python3
+del my_root["has_here_file"]
+```
+
+or demote a criterion:
+
+```
+my_root.move_to_end("some_less_expected_criterion")
+```
 
 The operators `&` for logical and and `|` do work on any criterion,
 adhering to python's operator precedence - in doubt use parentheses.

@@ -67,7 +67,7 @@ def chdir(new_dir: typing.Union[str, pathlib.Path]) -> typing.Iterator[None]:
         os.chdir(old_cwd)
 
 
-def test_has_file_cirterion() -> None:
+def test_has_file_criterion() -> None:
     testfile_contents = "a\nb\nc\nd\n"
 
     with fs_structure({"my_file": testfile_contents, "a/b/c/": None}) as test_dir:

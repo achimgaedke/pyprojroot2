@@ -36,6 +36,7 @@ Measure performance...
 * a rule matching a dir or file's name with the directory's basename as a component,
   e.g. `<project>/<project>.Rproj` ...
 * criteria testing absence of files... or generic negation?!
+* a function testing the directory should be convertable into a criterion
 
 ## Observed use cases
 

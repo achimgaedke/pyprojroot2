@@ -41,12 +41,16 @@ class Criterion(abc.ABC):
         # convenience function
         from .root import RootCriterion
 
-        return RootCriterion(criterion=self)
+        return RootCriterion({"criterion": self})
 
     @abc.abstractmethod
     def is_met(self, dir: PathSpec) -> bool:
         # the criterion is met for this path
         ...
+
+    def __call__(self, dir: PathSpec) -> bool:
+        # convenience function
+        return self.is_met(dir)
 
     def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
         if self.is_met(dir):
@@ -303,7 +307,7 @@ class IsCwd(Criterion):
 
 class AnyCriteria(Criterion):
     """
-    The directory matches when at least one of the cirteria is met.
+    The directory matches when at least one of the criteria is met.
 
     Criteria can be linked together with ``|`` to form ``AnyCriteria``.
     """
@@ -333,7 +337,7 @@ class AnyCriteria(Criterion):
 
 class AllCriteria(Criterion):
     """
-    The directory matches when all cirteria are met.
+    The directory matches when all criteria are met.
 
     Criteria can be linked together with ``&`` to form ``AllCriteria``.
     """
@@ -362,3 +366,12 @@ class AllCriteria(Criterion):
         if isinstance(other, AllCriteria):
             return AllCriteria(*self.criteria, *other.criteria)
         return AllCriteria(*self.criteria, other)
+
+
+def as_criterion(criterion: typing.Any) -> "Criterion":
+    # take anything and try to make a criterion out of it
+    if isinstance(criterion, (str, pathlib.Path)):
+        return HasEntry(criterion)
+    if isinstance(criterion, Criterion):
+        return criterion
+    raise ValueError(f"can not convert {type(criterion)} to criterion")
