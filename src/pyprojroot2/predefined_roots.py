@@ -18,15 +18,15 @@ r_root_criterion = RootCriterion(
 # see https://github.com/achimgaedke/pyprojroot2/blob/towards_v2/src/pyprojroot2/here.py#L17
 # this is a more python centric root criterion
 py_root_criterion = RootCriterion(
-    predefined_criteria.has_file(".here"),
-    predefined_criteria.has_dir(".git"),
-    predefined_criteria.matches_glob("*.Rproj"),
-    predefined_criteria.has_file("requirements.txt"),
-    predefined_criteria.has_file("setup.py"),
-    predefined_criteria.has_dir(".dvc"),
-    predefined_criteria.has_dir(".spyproject"),
-    predefined_criteria.has_file("pyproject.toml"),
-    predefined_criteria.has_dir(".idea"),
-    predefined_criteria.has_dir(".vscode"),
+    here=predefined_criteria.has_file(".here"),
+    git=predefined_criteria.has_dir(".git"),
+    rproj=predefined_criteria.matches_glob("*.Rproj"),
+    requirements_txt=predefined_criteria.has_file("requirements.txt"),
+    setup_py=predefined_criteria.has_file("setup.py"),
+    dvc=predefined_criteria.has_dir(".dvc"),
+    spyproject=predefined_criteria.has_dir(".spyproject"),
+    pyproject_toml=predefined_criteria.has_file("pyproject.toml"),
+    idea=predefined_criteria.has_dir(".idea"),
+    vscode=predefined_criteria.has_dir(".vscode"),
     cirteria_first=False,
 )

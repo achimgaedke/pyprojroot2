@@ -22,7 +22,7 @@ required.
 
 ## Use `here`
 
-Ready to use, find your directories relative to your project:
+`here` is ready to use, find your directories relative to your project:
 
 ```python3
 from pyprojroot2 import here
@@ -33,7 +33,7 @@ data_path = here("data")
 The project is detected with the help of a (pythonic) set of criteria starting
 from the current path, upwards in the filesystem.
 
-Want the pathname as string? (It doens't come with a ``/`` at the end.)
+Want the pathname as string? (It doens't come with a `/` at the end.)
 
 ```python3
 data_path = str(here("data"))
@@ -46,7 +46,7 @@ you can specify it:
 data_path = here("data", path="/humungous/partion/some/note/book/file.ipynb")
 ```
 
-Want to know what ``pyprojroot2`` chose and why?
+Want to know what `pyprojroot2` chose and why?
 
 ```python3
 from pyprojroot2 import find_root_with_reason
@@ -54,11 +54,11 @@ from pyprojroot2 import find_root_with_reason
 find_root_with_reason()
 ```
 
-If no root could be determined, the exception ``FileNotFoundError`` is raised.
+If no root could be determined, the exception `FileNotFoundError` is raised.
 
 ## Predefined root criteria
 
-A variety of criteria are available at ``predefined_roots``.
+A variety of criteria are available at `predefined_roots`.
 
 ```python
 from pyprojroot.predefined_roots import r_root_criterion
@@ -66,28 +66,32 @@ from pyprojroot.predefined_roots import r_root_criterion
 r_root_criterion.find_root()
 ```
 
-This will find a project root like ``rprojroot`` would do it.
+This will find a project root like `rprojroot` would do it.
+
+The criterion `py_root_criterion` is used by `here` - and serves most python
+projects or data-science notebook project out of the box.
 
 ## Define your own root criteria
 
 Step 1:
 
-    Define your own filesystem based criteria using HasFile, HasDir,
-    HasFilePattern to create a project criterion, which matches a
-    specific project's filesystem signature, e.g. ``git``.
+Define your own filesystem based criteria using `has_file`,
+`has_dir`, `has_file_pattern` or `match_glob` to create a project
+criterion, which matches a specific project's filesystem structure, e.g.
+`git` or a python package.
 
-    A variety of criteria are available at ``predefined_criteria``.
+A variety of criteria are available at `predefined_criteria`.
 
 Step 2:
 
-    Bundle different project criteria together to a ``RootCriterion``,
-    so if one isn't found, the next one is searched for.
+Bundle different project criteria together to a `RootCriterion`,
+so if one isn't found, the next one is searched for.
 
 This is even simpler in an example:
 
 ```python3
 from pyprojroot2 import as_root_criterion
-from pyprojroot2.predefined_criteria import is_git_root, has_dir`
+from pyprojroot2.predefined_criteria import is_git_root, has_dir
 
 my_root = as_root_criterion(
     is_git=is_git_root,
@@ -99,13 +103,13 @@ my_data = my_root("data")
 ```
 
 This root criterion will first look for a git root, if that isn't found,
-then move on to finding a directory with a ``data`` directory and
-finally if ``data`` couldn't be found, look out for ``.here``.
+then move on to finding a directory with a `data` directory and
+finally if `data` couldn't be found, look out for `.here`.
 
-If none of those could be located, then a ``FileNotFoundError`` exception
+If none of those could be located, then a `FileNotFoundError` exception
 is raised.
 
-If you know that the ``data`` directory is in the git root directory, you
+If you know that the `data` directory is in the git root directory, you
 could write:
 
 ```python3
@@ -115,12 +119,12 @@ my_root = as_root_criterion(
 )
 ```
 
-Keeping the ``.here`` file as a fallback option.
+Keeping the `.here` file as a fallback option.
 
-The operators ``&`` for logical and and ``|`` do work on any criterion,
+The operators `&` for logical and and `|` do work on any criterion,
 adhering to python's operator precedence - in doubt use parentheses.
 
-Unsurprisingly, the predefined ``is_vcs_root` criterion is:
+Unsurprisingly, the predefined `is_vcs_root` criterion is:
 
 ```python3
 is_vcs_root = is_git_root | is_svn_root
@@ -137,7 +141,7 @@ will find the root for this one criterion.
 
 ## Use outside python
 
-The command ``pyprojroot2`` will allow basic root finding operations on
+The command `pyprojroot2` will allow basic root finding operations on
 the shell. So you can be sure, the result is consistent with the python
 scripting.
 
@@ -149,47 +153,3 @@ pyprojroot2
 ```
 
 If no project root is found, it will fail with an error message.
-
-## Reference documentation
-
-More to come... Here some pointers:
-
-* the "machinery" is in `criteria.py` and `root.py`,
-* the files `predefined_criteria.py` and `predefined_roots.py` provide criteria definitions ported from `rprojroot` and `pyprojroot`
-* the files `__init__.py`, `root.py` and `here.py` should contain the "public interface",
-
-The main distinction is to be made between:
-
-* Criterion: tests a given directory, provides a reason for a match and allows combining with `&` (and) and `|` (or). Concrete examples are: `HasDir(".git")`, `HasFile("setup.cfg")`, ...
-* RootCriteria: tests a list of criteria and uses the first criterion returning a match on one of the parent directories, e.g. typical RootCriteria for a python data-science project or an R project.
-
-So far, I've written and tested the "machinery". Now I have to write the documentation
-to see how the public interface should look like.
-
-## Agenda
-
-Agenda:
-
-* initially serve as drop in replacement of [pyprojroot](https://github.com/chendaniely/pyprojroot)
-* compatibility with [rprojroot](https://github.com/r-lib/rprojroot) version 2
-* compatibility with [here](https://github.com/r-lib/here)
-* tested support for python >=3.7
-* aim for high test coverage
-* bring the typing annotations and docstrings to a useful state (LSP, linters)
-* (future) updated packging configuration/toolchain
-* (future) distribution to pypi and conda as `pyprojroot2`
-* (future) build up cookbook and reference documentation
-
-## Development Commands
-
-```shell
-mamba env create -f environment-dev.yml
-mamba env update -f environment-dev.yml  
-```
-
-```shell
-PYTHONPATH=src python -m pytest --cov-report term-missing --cov=pyprojroot2  tests
-python -m mypy src/pyprojroot2
-```
-
-See also the `Makefile`.
