@@ -80,13 +80,6 @@ def test_has_file_cirterion() -> None:
             "c",
             "d",
         ]
-        assert (
-            list(HasFile("my_file", n=0).read_lines_from_file(test_dir / "my_file"))
-            == []
-        )
-        assert list(
-            HasFile("my_file", n=2).read_lines_from_file(test_dir / "my_file")
-        ) == ["a", "b"]
 
         # test "fixed" content
         assert HasFile("my_file", "c", fixed=True).is_met(test_dir)

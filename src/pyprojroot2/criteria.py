@@ -1,4 +1,5 @@
 import abc
+import itertools
 import pathlib
 import re
 import typing
@@ -90,33 +91,45 @@ class HasFile(Criterion):
 
     def read_lines_from_file(self, file: PathSpec) -> typing.Iterator[str]:
         """
-        read the lines, strip off the newline at the end and stop at max_lines_to_search
+        Read the lines from the text file and retruns them without the
+        newline character at the end.
         """
-        max_lines = self.max_lines_to_search
         with open(file, "rt") as txt_file:
-            while max_lines != 0:
-                line = txt_file.readline()
-                if not line:
-                    return
-                # removesuffix introduced at python 3.9
-                if line[-1] == "\n":
-                    yield line[:-1]
-                else:
-                    yield line
-                max_lines -= 1
+            yield from (line.rstrip("\n") for line in txt_file)
 
     def check_file_contents(self, file: PathSpec) -> bool:
         """
-        check the contents of the file
+        Check whether in the contents of the file meets the line match
+        criterion.
         """
+        # early returns have the side effect that the read permission for the
+        # file is not checked.
         if self.contents is None:
             return True
+        if self.max_lines_to_search == 0:
+            return False
 
-        if not self.fixed:
-            pattern = re.compile(self.contents)
-            return any(pattern.search(line) for line in self.read_lines_from_file(file))
+        line_iterator = self.read_lines_from_file(file)
 
-        return any(line == self.contents for line in self.read_lines_from_file(file))
+        if self.max_lines_to_search >= 0:
+            line_iterator = itertools.islice(
+                line_iterator,
+                self.max_lines_to_search,
+            )
+
+        if self.fixed:
+            fixed_pattern = self.contents
+
+            def match_function(line: str) -> bool:
+                return fixed_pattern == line
+
+        else:
+            regexp_pattern = re.compile(self.contents)
+
+            def match_function(line: str) -> bool:
+                return regexp_pattern.search(line) is not None
+
+        return any((match_function(line) for line in line_iterator))
 
     def describe_contents_matching(self) -> str:
         if self.contents is None:
