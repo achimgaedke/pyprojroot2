@@ -14,7 +14,12 @@ as_root_criterion = RootCriterion
 # either rprojroot's stuff or pyprojroot's stuff?
 # and where does the "here" functionality go?
 
+# todo: how to link this up to pyproject.toml?
+# if installed, read from installation metadata
+__version__ = "0.4.0"
+
 __all__ = [
+    "__version__",
     "as_root_criterion",
     "has_file",
     "has_dir",
