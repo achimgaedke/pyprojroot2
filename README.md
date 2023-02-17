@@ -29,6 +29,11 @@ it should work as a drop in replacement for `pyprojroot`.
 import pyprojroot2 as pyprojroot
 ```
 
+## Use `here`
+
+
+
+
 ## Useful commands
 
 ```shell

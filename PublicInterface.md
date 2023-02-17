@@ -33,4 +33,53 @@ is_r_package | is_rstudio_project
 
 needs to fullfill all criteria
 
+for RootCriterion: coerce strings to `HasEntry`
 
+biggest challenge: make it easy to tailor a root criterion.
+
+
+# Other Criteria:
+# Pattern matching directories
+
+
+
+# known use cases
+
+
+https://github.com/search/advanced
+
+There are projects out there importing here like this:
+```
+from pyprojroot.pyprojroot import here
+```
+
+```
+import pyprojroot
+PLOT_PATH = str(pyprojroot.here("reports/figures/test_plot.png"))
+```
+
+```
+import pyprojroot
+pyprojroot.here("data").joinpath("raw")
+```
+
+```
+data_dir = pyprojroot.here('data')
+```
+
+always a funny mixture of os.path and pathlib
+
+
+default_config_path = str(pyprojroot.here("configs"))
+
+```
+    loc = pyprojroot.here('./data/to_match_special/' + subfolder)
+    zip_ej = pyprojroot.here('./data/outputs/ZCTA_EJ_special.csv')
+```
+
+# similar projects
+
+Great inspiration for pyprojroot's here
+
+https://pypi.org/project/pyhere/
+https://github.com/wildland-creative/pyhere
