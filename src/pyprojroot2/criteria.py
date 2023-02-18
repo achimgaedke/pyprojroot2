@@ -52,10 +52,10 @@ class Criterion(abc.ABC):
         # convenience function
         return self.is_met(dir)
 
-    def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
+    def is_met_with_reason(self, dir: PathSpec) -> typing.Tuple[bool, str]:
         if self.is_met(dir):
-            return self.describe()
-        return False
+            return True, self.describe()
+        return False, f"not ({self.describe()})"
 
     def __or__(self, other: "Criterion") -> "AnyCriteria":
         if isinstance(other, AnyCriteria):
@@ -322,12 +322,14 @@ class AnyCriteria(Criterion):
     def is_met(self, dir: PathSpec) -> bool:
         return any(c.is_met(dir) for c in self.criteria)
 
-    def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
+    def is_met_with_reason(self, dir: PathSpec) -> typing.Tuple[bool, str]:
+        all_reasons = []
         for c in self.criteria:
-            c_met = c.is_met_with_reason(dir)
-            if isinstance(c_met, str):
-                return c_met
-        return False
+            c_met, reason = c.is_met_with_reason(dir)
+            if c_met:
+                return True, reason
+            all_reasons.append(reason)
+        return False, " and ".join(all_reasons)
 
     def __or__(self, other: Criterion) -> "AnyCriteria":
         if isinstance(other, AnyCriteria):
@@ -352,15 +354,15 @@ class AllCriteria(Criterion):
     def is_met(self, dir: PathSpec) -> bool:
         return all(c.is_met(dir) for c in self.criteria)
 
-    def is_met_with_reason(self, dir: PathSpec) -> typing.Union[str, bool]:
+    def is_met_with_reason(self, dir: PathSpec) -> typing.Tuple[bool, str]:
         reasons: typing.List[str] = []
         for c in self.criteria:
-            reason = c.is_met_with_reason(dir)
-            if isinstance(reason, str):
-                reasons.append(reason)
-            else:
-                return False
-        return " and ".join(reasons)
+            c_met, reason = c.is_met_with_reason(dir)
+            if not c_met:
+                return False, reason
+            reasons.append(reason)
+
+        return True, " and ".join(reasons)
 
     def __and__(self, other: Criterion) -> "AllCriteria":
         if isinstance(other, AllCriteria):
@@ -369,6 +371,9 @@ class AllCriteria(Criterion):
 
 
 def as_criterion(criterion: typing.Any) -> "Criterion":
+    """
+    Converts its input into Criterion.
+    """
     # take anything and try to make a criterion out of it
     if isinstance(criterion, (str, pathlib.Path)):
         return HasEntry(criterion)

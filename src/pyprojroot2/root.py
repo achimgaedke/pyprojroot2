@@ -130,8 +130,8 @@ class RootCriterion(typing.OrderedDict[str, Criterion]):
         Raises FileNotFoundError if no criteria were met.
         """
         for name, criterion, dir in self.iter_criteria_parents(path):
-            reason = criterion.is_met_with_reason(dir)
-            if isinstance(reason, str):
+            c_met, reason = criterion.is_met_with_reason(dir)
+            if c_met:
                 return dir, f"{name}: {reason}"
 
         raise FileNotFoundError("could not find the project root")
@@ -163,6 +163,8 @@ def as_root_criterion(
     resolve_path: typing.Optional[bool] = False,
 ) -> RootCriterion:
     """
+    Converts its input into RootCriterion.
+
     If a string is given, the existence of the file entry is tested, i.e. the
     string is converted to a ``HasEntry`` criterion.
     """

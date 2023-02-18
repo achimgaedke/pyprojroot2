@@ -165,7 +165,10 @@ def test_has_entry() -> None:
             test_dir
         )  # oddly this succeeds, though it is a file
         assert not HasEntry("b").is_met(test_dir)
-        assert HasEntry("a").is_met_with_reason(test_dir) == "contains the entry `a`"
+        assert HasEntry("a").is_met_with_reason(test_dir) == (
+            True,
+            "contains the entry `a`",
+        )
 
 
 def test_has_basename() -> None:

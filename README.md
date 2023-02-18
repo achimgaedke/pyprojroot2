@@ -76,7 +76,7 @@ This finds a project root like `rprojroot` does it.
 The criterion `py_root_criterion` is used by `here` - and serves most python
 projects or data-science notebook project out of the box.
 
-## Define your own root criteria
+## Define your own (root) criteria
 
 Step 1:
 
@@ -85,12 +85,16 @@ Define your own filesystem based criteria using `has_file`,
 criterion, which matches a specific project's filesystem structure, e.g.
 `git` or a python package.
 
-A variety of criteria are available at `predefined_criteria`.
+A criterion is soley testing a given directory whether it meets the
+checks. A variety of criteria are available at `predefined_criteria`.
 
 Step 2:
 
-Bundle different project criteria together to a `RootCriterion`,
-so if one isn't found, the next one is searched for.
+Bundle different project criteria together to a root criterion,
+so if one isn't successful, the next one is searched for.
+
+The root criterion does actually do the search of the filesystem for
+the root of your project.
 
 This is easy to elaborate in an example:
 
@@ -130,17 +134,6 @@ my_root = as_root_criterion(
 
 Keeping the `.here` file as a fallback option.
 
-The root criteria can be manipulated using the OrderedDict methods:
-
-```python3
-del my_root["has_here_file"]
-```
-
-or demote a criterion:
-
-```
-my_root.move_to_end("some_less_expected_criterion")
-```
 
 The operators `&` for logical and and `|` do work on any criterion,
 adhering to python's operator precedence - in doubt use parentheses.
@@ -159,6 +152,20 @@ convenience functions `find_root`, ... of criteria, doing this implicitly:
 ```
 
 will find the root for this one criterion.
+
+The root criteria can be manipulated using the OrderedDict methods:
+
+```python3
+del my_root["has_here_file"]
+```
+
+to remove a criterion or demote a criterion:
+
+```
+my_root.move_to_end("some_less_expected_criterion")
+```
+
+by moving it to the end.
 
 ## Use outside python
 
