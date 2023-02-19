@@ -38,12 +38,14 @@ class RootCriterion(abc.ABC):
             abspath = pathlib.Path(path).resolve()
         else:
             abspath = pathlib.Path(os.path.abspath(path))
+        if not abspath.exists():
+            raise FileNotFoundError(f"`{path}` does not exist.")
         if not abspath.is_dir():
             return abspath.parent
         return abspath
 
     @classmethod
-    def list_parents(
+    def list_search_dirs(
         cls,
         path: PathSpec = ".",
         limit_parents: typing.Union[int, None] = None,
@@ -74,7 +76,7 @@ class RootCriterion(abc.ABC):
 
         Raises FileNotFoundError if no criteria were met.
         """
-        parents = self.list_parents(*args, **kwargs)
+        parents = self.list_search_dirs(*args, **kwargs)
 
         for dir in parents:
             if self.test(dir):
@@ -132,7 +134,7 @@ class RootCriterion(abc.ABC):
         """
         Return the root directory and the reason why it matches.
         """
-        parents = self.list_parents(*args, **kwargs)
+        parents = self.list_search_dirs(*args, **kwargs)
         for dir in parents:
             success, reason = self.test_with_reason(dir)
             if success:
