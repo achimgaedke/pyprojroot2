@@ -24,6 +24,11 @@ has_dir = HasDir
 # https://github.com/chendaniely/pyprojroot/blob/dev/src/pyprojroot/criterion.py#L66
 matches_glob = HasEntryGlob
 
+# criteria provided by this package
+
+# https://github.com/iterative/dvc/blob/8edaef010322645ccfc83936e5b7f706ad9773a4/dvc/repo/__init__.py#L399
+is_dvc_root = HasDir(".dvc")
+
 # criteria from R project rprojroot
 
 # https://github.com/r-lib/rprojroot/blob/main/R/root.R#L309
