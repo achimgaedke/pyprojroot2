@@ -19,7 +19,7 @@ HERE_ROOT_CRITERION: RootCriterion = py_here_criteria
 # https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/here.R#L33
 # TODO: this actually uses a cached version of the root path
 def here(*args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
-    return HERE_ROOT_CRITERION.find_root_file(*args, **kwargs)
+    return HERE_ROOT_CRITERION.find_file(*args, **kwargs)
 
 
 # https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/dr_here.R#L11

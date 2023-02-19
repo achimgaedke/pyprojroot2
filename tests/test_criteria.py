@@ -97,7 +97,7 @@ def test_has_file_criterion() -> None:
         # test direct use as root criterion
         assert test_dir == HasFile("my_file").find_root(test_dir / "a/b/c/")
 
-        my_file = HasFile("my_file").find_root_file("my_file", path=test_dir)
+        my_file = HasFile("my_file").find_file("my_file", path=test_dir)
         assert isinstance(my_file, pathlib.Path)
         assert open(my_file).read() == testfile_contents
 
@@ -107,10 +107,10 @@ def test_has_file_criterion() -> None:
 
         # test current directory setting
         with chdir(test_dir):
-            assert HasFile("my_file").find_root_file("my_file")
+            assert HasFile("my_file").find_file("my_file")
 
         with chdir(test_dir / "a"):
-            assert HasFile("my_file").find_root_file("my_file")
+            assert HasFile("my_file").find_file("my_file")
 
         # look at the reason
         with pytest.raises(FileNotFoundError):

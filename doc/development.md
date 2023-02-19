@@ -17,9 +17,9 @@ Agenda:
 Use this template:
 
 ```python3
-from pyprojroot2.criteria import Criterion, PathSpec
+from pyprojroot2.root_criterion import RootCriterion, PathSpec
 
-class MyCriterion(Criterion):
+class MyCriterion(RootCriterion):
     """
     Add some documentation about the file structure
     you want to match...
@@ -30,7 +30,7 @@ class MyCriterion(Criterion):
         # and so on
         super().__init__()
 
-    def is_met(self, path: PathSpec=".") -> bool:
+    def test(self, path: PathSpec=".") -> bool:
         # your checking code here
         return True
 
@@ -41,6 +41,8 @@ class MyCriterion(Criterion):
 
 When submitting as a pull request, make sure unittests are added.
 The more generic/versatle or more likely used by many... the better.
+
+See also TestFunCriterion
 
 ## Development Commands
 

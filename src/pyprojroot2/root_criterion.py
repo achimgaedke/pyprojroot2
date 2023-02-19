@@ -28,6 +28,12 @@ class RootCriterion(abc.ABC):
     def get_start_path(
         path: PathSpec = ".", resolve_path: bool = False
     ) -> pathlib.Path:
+        """
+        Determines the start path for the root directory search.
+
+        ``resolve_path`` will use pathlib.resolve_path to get an absolute start
+        path. Otherwise ``os.path.abspath`` is used (default).
+        """
         if resolve_path:
             abspath = pathlib.Path(path).resolve()
         else:
@@ -39,12 +45,28 @@ class RootCriterion(abc.ABC):
     @classmethod
     def list_parents(
         cls,
-        path: PathSpec,
-        end: typing.Union[int, None] = None,
+        path: PathSpec = ".",
+        limit_parents: typing.Union[int, None] = None,
         resolve_path: bool = False,
     ) -> typing.List[pathlib.Path]:
+        """
+        Determine the (parent) directories to test against the root criteria.
+
+        ``resolve_path`` will use ``pathlib.resolve_path`` to get an absolute start
+        path. Otherwise ``os.path.abspath`` is used (default).
+
+        ``limit_parents`` if None (default) all parents are considered, a
+        positive number will consider the next n parents. A negative number
+        will limit the search to the -limit_parents level in the file system.
+
+        ``list_parents("/home/me/projects/fancy-project/src", limit_parents=-2)``
+
+        will search only ``src``, ``fancy-project``, and ``projects``. A value
+        of 1 will search ``src`` and ``fancy-projects``.
+        """
         start_path = cls.get_start_path(path, resolve_path)
-        return [start_path, *start_path.parents][slice(end)]
+        # slicing pathlib.Path.parents is supportered since python-3.10 only
+        return [start_path, *list(start_path.parents)[slice(limit_parents)]]
 
     def find_root(self, *args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
         """
@@ -58,14 +80,12 @@ class RootCriterion(abc.ABC):
             if self.test(dir):
                 return dir
 
-        # todo: add criterion
+        # todo: add criterion to error message
         raise FileNotFoundError(
             f"No root directory found in {parents[0]} or its parent directories."
         )
 
-    def find_root_file(
-        self, *args: PathSpec, path: PathSpec = ".", **kwargs: typing.Any
-    ) -> pathlib.Path:
+    def find_file(self, *args: PathSpec, **kwargs: typing.Any) -> pathlib.Path:
         """
         Find a file's (or directory's) path relative to the project's root.
 
@@ -76,38 +96,59 @@ class RootCriterion(abc.ABC):
 
         Raises FileNotFoundError if no criteria were met.
         """
-        # warning if file/path doesn't exist?!
-        return pathlib.Path(self.find_root(path, **kwargs), *args)
-
-    #  we can pass around bound methods - no need for generating clojures
-    find_file = find_root_file
+        # rprojroot checks that all but first components are relative
+        if any(pathlib.Path(arg).is_absolute() for arg in args[1:]):
+            raise ValueError("only first path component may be absolute")
+        file_path = pathlib.Path(*args)
+        if file_path.is_absolute():
+            # bypass as done by rprojroot
+            return file_path
+        return self.find_root(**kwargs).joinpath(file_path)
 
     def make_fix_file(
         self, *args: typing.Any, **kwargs: typing.Any
-    ) -> typing.Callable[[PathSpec], pathlib.Path]:
-        return self.find_root(*args, **kwargs).joinpath
+    ) -> typing.Callable[..., pathlib.Path]:
+        # typing.Callable[[typing.Unpack[PathSpec]], pathlib.Path]
+        # Unpack is only experimental in mypy-1.0.0
+        """
+        Create and return a function to generate the absolute paths of
+        project files.
+        """
+        root_dir = self.find_root(*args, **kwargs)
+
+        def fix_file_fn(*fx_args: PathSpec) -> pathlib.Path:
+            if any(pathlib.Path(arg).is_absolute() for arg in fx_args[1:]):
+                raise ValueError("only first path component may be absolute")
+            file_path = pathlib.Path(*fx_args)
+            if file_path.is_absolute():
+                return file_path
+            return root_dir.joinpath(file_path)
+
+        return fix_file_fn
 
     def find_root_with_reason(
         self, *args: typing.Any, **kwargs: typing.Any
     ) -> typing.Tuple[pathlib.Path, str]:
+        """
+        Return the root directory and the reason why it matches.
+        """
         parents = self.list_parents(*args, **kwargs)
-
         for dir in parents:
             success, reason = self.test_with_reason(dir)
             if success:
                 return dir, reason
 
+        # todo: add criterion to error message
         raise FileNotFoundError(
             f"No root directory found in {parents[0]} or its parent directories."
         )
 
     @abc.abstractmethod
     def test(self, dir: PathSpec) -> bool:
-        # the criterion is met for this path
+        """
+        Tests whether the criterion is met for ``path``.
+        """
         ...
-
-    def __call__(self, dir: PathSpec) -> bool:
-        return self.test(dir)
 
     def test_with_reason(self, dir: PathSpec) -> typing.Tuple[bool, str]:
         """
@@ -135,24 +176,32 @@ class RootCriterion(abc.ABC):
         return AllCriteria(self, other)
 
 
-class TestFnCriterion(RootCriterion):
+class TestFunCriterion(RootCriterion):
+    """
+    Create a criterion by providing a test function and optional description.
+    """
+
     def __init__(
         self,
-        test_fn: typing.Callable[[PathSpec], bool],
-        desc: typing.Optional[str] = None,
+        testfun: typing.Callable[[PathSpec], bool],
+        description: typing.Optional[str] = None,
     ):
-        self.test_fn = test_fn
-        if desc:
-            self.description = desc
+        # todo: check whether testfun has one path argument
+        self.testfun = testfun
+        if description is None:
+            self.description = f"Test Function `{testfun.__name__}`"
         else:
-            self.description = f"Test Function `{test_fn.__name__}`"
+            self.description = description
         super().__init__()
 
     def describe(self) -> str:
         return self.description
 
     def test(self, dir: PathSpec) -> bool:
-        return self.test_fn(dir)
+        return self.testfun(dir)
+
+
+# todo: for this and below: check for relative paths in criterion args
 
 
 class HasFile(RootCriterion):
@@ -495,7 +544,7 @@ def as_root_criterion(criterion: typing.Any) -> "RootCriterion":
     if isinstance(criterion, (str, pathlib.Path)):
         return HasFile(criterion)
     if callable(criterion):
-        return TestFnCriterion(criterion)
+        return TestFunCriterion(criterion)
     if isinstance(criterion, dict):
         return AnyCriteria(*map(as_root_criterion, criterion.values()))
     if isinstance(criterion, (list, tuple)):

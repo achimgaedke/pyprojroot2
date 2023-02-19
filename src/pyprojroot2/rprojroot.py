@@ -27,19 +27,19 @@ from .root_criterion import PathSpec, RootCriterion, as_root_criterion
 criteria = r_criteria
 
 
-# that's the rprojroot variant
+# https://github.com/r-lib/rprojroot/blob/49a1a644246abcdcbe11a9396b1bb147d0919853/R/root.R#L89
 def find_root(criterion: typing.Any, path: PathSpec = ".") -> pathlib.Path:
     return as_root_criterion(criterion).find_root(path)
 
 
-# https://rprojroot.r-lib.org/reference/find_root_file.html
+# https://github.com/r-lib/rprojroot/blob/c5a32458701c7a951158d96618cfc07ed692d75f/R/file.R#L36
 def find_root_file(
-    *args: PathSpec, criterion: typing.Any, path: PathSpec = "."
+    *args: PathSpec, criterion: typing.Any, **kwargs: typing.Any
 ) -> pathlib.Path:
-    return as_root_criterion(criterion).find_root_file(*args, path=path)
+    return as_root_criterion(criterion).find_file(*args, **kwargs)
 
 
-# get_root_desc, has_file, has_dir, has_file_pattern, has_basename
+# https://github.com/r-lib/rprojroot/blob/49a1a644246abcdcbe11a9396b1bb147d0919853/R/root.R#L143
 def get_root_desc(criterion: typing.Any, path: PathSpec) -> str:
     root_criterion = as_root_criterion(criterion)
     success, reason = root_criterion.test_with_reason(path)
@@ -56,16 +56,16 @@ def is_root_criterion(criterion: typing.Any) -> bool:
 # https://github.com/r-lib/rprojroot/blob/main/R/shortcut.R
 
 # find_rstudio_root_file(..., path = ".")
-find_rstudio_root_file = is_rstudio_project.find_root_file
+find_rstudio_root_file = is_rstudio_project.find_file
 
 # find_package_root_file(..., path = ".")
-find_package_root_file = is_r_package.find_root_file
+find_package_root_file = is_r_package.find_file
 
 # find_remake_root_file(..., path = ".")
-find_remake_root_file = is_remake_project.find_root_file
+find_remake_root_file = is_remake_project.find_file
 
 # find_testthat_root_file(..., path = ".")
-find_testthat_root_file = is_testthat.find_root_file
+find_testthat_root_file = is_testthat.find_file
 
 __all__ = [
     # https://github.com/r-lib/rprojroot/blob/main/NAMESPACE

@@ -27,7 +27,7 @@ def here(
     else:
         root_criterion = as_root_criterion(project_files)
 
-    project_entry = root_criterion.find_root_file(relative_project_path)
+    project_entry = root_criterion.find_file(relative_project_path)
     if warn and not project_entry.exists():
         warnings.warn(f"Path doesn't exist: {project_entry}")
     return project_entry
