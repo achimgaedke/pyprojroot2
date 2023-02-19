@@ -7,9 +7,10 @@ def test_public_interface() -> None:
 
     assert callable(pyprojroot.here)
 
-    from pyprojroot2 import here
+    from pyprojroot2 import here, py_project_root
 
     assert callable(here)
+    assert callable(py_project_root)
 
 
 def test_legacy_import() -> None:
@@ -17,3 +18,7 @@ def test_legacy_import() -> None:
         from pyprojroot2.pyprojroot import here
 
     assert callable(here)
+
+
+def test_rprojroot_core_functions() -> None:
+    pass

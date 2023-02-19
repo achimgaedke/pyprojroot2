@@ -7,7 +7,7 @@ import typing
 
 import pytest
 
-from pyprojroot2.criteria import (
+from pyprojroot2.root_criterion import (
     HasFile,
     IsCwd,
     AnyCriteria,
@@ -71,8 +71,8 @@ def test_has_file_criterion() -> None:
     testfile_contents = "a\nb\nc\nd\n"
 
     with fs_structure({"my_file": testfile_contents, "a/b/c/": None}) as test_dir:
-        assert HasFile("my_file").is_met(test_dir)
-        assert not HasFile("my_file.txt").is_met(test_dir)
+        assert HasFile("my_file").test(test_dir)
+        assert not HasFile("my_file.txt").test(test_dir)
 
         assert list(HasFile("my_file").read_lines_from_file(test_dir / "my_file")) == [
             "a",
@@ -82,22 +82,22 @@ def test_has_file_criterion() -> None:
         ]
 
         # test "fixed" content
-        assert HasFile("my_file", "c", fixed=True).is_met(test_dir)
-        assert HasFile("my_file", "c", n=-3, fixed=True).is_met(test_dir)
-        assert HasFile("my_file", "c", n=3, fixed=True).is_met(test_dir)
-        assert not HasFile("my_file", "a", fixed=True, n=0).is_met(test_dir)
-        assert not HasFile("my_file", "", fixed=True).is_met(test_dir)
+        assert HasFile("my_file", "c", fixed=True).test(test_dir)
+        assert HasFile("my_file", "c", n=-3, fixed=True).test(test_dir)
+        assert HasFile("my_file", "c", n=3, fixed=True).test(test_dir)
+        assert not HasFile("my_file", "a", fixed=True, n=0).test(test_dir)
+        assert not HasFile("my_file", "", fixed=True).test(test_dir)
 
         # test regexp matching
-        assert HasFile("my_file", "[bc]").is_met(test_dir)
-        assert not HasFile("my_file", "[bc]", n=1).is_met(test_dir)
+        assert HasFile("my_file", "[bc]").test(test_dir)
+        assert not HasFile("my_file", "[bc]", n=1).test(test_dir)
 
-        assert not HasFile("my_file.txt", "[bc]", n=1).is_met(test_dir)
+        assert not HasFile("my_file.txt", "[bc]", n=1).test(test_dir)
 
         # test direct use as root criterion
         assert test_dir == HasFile("my_file").find_root(test_dir / "a/b/c/")
 
-        my_file = HasFile("my_file").find_file("my_file", path=test_dir)
+        my_file = HasFile("my_file").find_root_file("my_file", path=test_dir)
         assert isinstance(my_file, pathlib.Path)
         assert open(my_file).read() == testfile_contents
 
@@ -107,10 +107,10 @@ def test_has_file_criterion() -> None:
 
         # test current directory setting
         with chdir(test_dir):
-            assert HasFile("my_file").find_file("my_file")
+            assert HasFile("my_file").find_root_file("my_file")
 
         with chdir(test_dir / "a"):
-            assert HasFile("my_file").find_file("my_file")
+            assert HasFile("my_file").find_root_file("my_file")
 
         # look at the reason
         with pytest.raises(FileNotFoundError):
@@ -118,20 +118,20 @@ def test_has_file_criterion() -> None:
 
         assert HasFile("my_file").find_root_with_reason(test_dir) == (
             pathlib.Path(test_dir),
-            "criterion: has a file `my_file`",
+            "has a file `my_file`",
         )
         assert HasFile("my_file", "a", 1, fixed=True).find_root_with_reason(
             test_dir
         ) == (
             pathlib.Path(test_dir),
-            "criterion: has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s",
+            "has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s",
         )
 
         assert HasFile("my_file", "[ac]", 1, fixed=False).find_root_with_reason(
             test_dir
         ) == (
             pathlib.Path(test_dir),
-            "criterion: has a file `my_file` and file contains a line matching the regular expression `[ac]` in the first 1 line/s",
+            "has a file `my_file` and file contains a line matching the regular expression `[ac]` in the first 1 line/s",
         )
 
         # test the describe method
@@ -148,24 +148,24 @@ def test_has_file_criterion() -> None:
 def test_current_dir() -> None:
     with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
         with chdir(test_dir):
-            assert IsCwd().is_met(test_dir)
+            assert IsCwd().test(test_dir)
             assert test_dir == IsCwd().find_root(test_dir / "a" / "b" / "c")
 
 
 def test_has_entry() -> None:
     with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        assert HasEntry("a").is_met(test_dir)
-        assert HasEntry("a/").is_met(test_dir)
-        assert HasEntry(".").is_met(test_dir)  # that's an odd case?!
-        assert HasEntry("my_file").is_met(test_dir)
-        assert HasEntry("my_file/").is_met(
+        assert HasEntry("a").test(test_dir)
+        assert HasEntry("a/").test(test_dir)
+        assert HasEntry(".").test(test_dir)  # that's an odd case?!
+        assert HasEntry("my_file").test(test_dir)
+        assert HasEntry("my_file/").test(
             test_dir
         )  # oddly this succeeds, though it is a file
-        assert HasEntry("my_file/.").is_met(
+        assert HasEntry("my_file/.").test(
             test_dir
         )  # oddly this succeeds, though it is a file
-        assert not HasEntry("b").is_met(test_dir)
-        assert HasEntry("a").is_met_with_reason(test_dir) == (
+        assert not HasEntry("b").test(test_dir)
+        assert HasEntry("a").test_with_reason(test_dir) == (
             True,
             "contains the entry `a`",
         )
@@ -173,17 +173,17 @@ def test_has_entry() -> None:
 
 def test_has_basename() -> None:
     with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        assert HasBasename("a").is_met(test_dir / "a")
-        assert not HasBasename("a").is_met(test_dir)
-        assert HasBasename(test_dir.name).is_met(test_dir)
+        assert HasBasename("a").test(test_dir / "a")
+        assert not HasBasename("a").test(test_dir)
+        assert HasBasename(test_dir.name).test(test_dir)
 
 
 def test_pattern_filenames() -> None:
     with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        assert HasFileGlob("my_*").is_met(test_dir)
-        assert HasFilePattern("_fil").is_met(test_dir)
-        assert not HasFilePattern("^_fil").is_met(test_dir)
-        assert not HasFilePattern("[ab]").is_met(test_dir)
+        assert HasFileGlob("my_*").test(test_dir)
+        assert HasFilePattern("_fil").test(test_dir)
+        assert not HasFilePattern("^_fil").test(test_dir)
+        assert not HasFilePattern("[ab]").test(test_dir)
 
         assert HasFileGlob("my_*").describe() == "has a file matching `my_*`"
         assert (
@@ -197,9 +197,9 @@ def test_any_criteria() -> None:
         combined_criteria = HasBasename("a") | HasFile("my_file")
         assert isinstance(combined_criteria, AnyCriteria)
 
-        assert combined_criteria.is_met(test_dir)
-        assert combined_criteria.is_met(test_dir / "a")
-        assert not combined_criteria.is_met(test_dir / "b")
+        assert combined_criteria.test(test_dir)
+        assert combined_criteria.test(test_dir / "a")
+        assert not combined_criteria.test(test_dir / "b")
 
         assert (
             combined_criteria.describe()
@@ -212,8 +212,8 @@ def test_all_criteria() -> None:
         combined_criteria = HasDir("a") & HasFile("my_file")
         assert isinstance(combined_criteria, AllCriteria)
 
-        assert combined_criteria.is_met(test_dir)
-        assert not (combined_criteria & HasDir("b")).is_met(test_dir)
+        assert combined_criteria.test(test_dir)
+        assert not (combined_criteria & HasDir("b")).test(test_dir)
 
         assert (
             combined_criteria.describe()
@@ -223,16 +223,13 @@ def test_all_criteria() -> None:
             test_dir / "a/b"
         )
         assert combined_root == test_dir
-        assert (
-            combined_reason
-            == "criterion: contains the directory `a` and has a file `my_file`"
-        )
+        assert combined_reason == "contains the directory `a` and has a file `my_file`"
 
         combined_all_any = combined_criteria & HasDir("b") | HasBasename(test_dir.name)
         assert isinstance(combined_all_any, AnyCriteria)  # due to operator precedence
-        assert combined_all_any.is_met(test_dir)
+        assert combined_all_any.test(test_dir)
 
         assert combined_all_any.find_root(test_dir / "a")
         combined_root, reason = combined_all_any.find_root_with_reason(test_dir / "a")
         assert combined_root == test_dir
-        assert reason == f"criterion: has the basename `{test_dir.name}`"
+        assert reason == f"has the basename `{test_dir.name}`"

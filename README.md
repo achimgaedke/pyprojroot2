@@ -1,4 +1,8 @@
-# Origin / Refactor
+# About `pyprojroot2`
+
+Want to determine where in the file system your project's base (or root) directory is?
+
+`pyprojroot2` provides the solution, makes it easy to locate data in a project.
 
 This project is a complete rewrite of [Daniel Chen's pyprojroot](https://github.com/chendaniely/pyprojroot)
 inspired by  the issues in the tracker and the `TODO`s in the code.
@@ -50,67 +54,59 @@ data_path = here("data", path="/humungous/partion/some/note/book/file.ipynb")
 ```
 
 If no root could be determined, the exception `FileNotFoundError` is raised.
+If the project root is not recognized, you can add a `.here` file into the
+corresponding directory, helping `here` out.
 
 Want to know what `pyprojroot2` chose and why?
 
 ```python3
-from pyprojroot2 import find_root_with_reason
+from pyprojroot2 import get_root_desc
 
-find_root_with_reason()
+get_root_desc(here())
 ```
-
-Todo: Outupt - test it!
 
 ## Predefined root criteria
 
-A variety of criteria are available in the submodule `predefined_roots`.
+A variety of criteria are available in the submodule `predefined_roots`, e.g.
 
 ```python
-from pyprojroot2.predefined_roots import r_root_criterion
+from pyprojroot2.predefined_criteria import is_git_root
 
-r_root_criterion.find_root()
+is_git_root.find_root()
 ```
 
-This finds a project root like `rprojroot` does it.
+This finds specifically the git repository project root.
 
-The criterion `py_root_criterion` is used by `here` - and serves most python
-projects or data-science notebook project out of the box.
+The criterion `py_here_criteria` is used as default by `here` as it combines
+many typical python project root criteria. It serves most python projects or
+data-science notebook project out of the box.
 
 ## Define your own (root) criteria
 
-Step 1:
+If you know that your project root will have the (only) `data` directory in
+your project, then you can specify:
 
-Define your own filesystem based criteria using `has_file`,
-`has_dir`, `has_file_pattern` or `match_glob` to create a project
-criterion, which matches a specific project's filesystem structure, e.g.
-`git` or a python package.
+```python
+has_dir("data")
+```
 
-A criterion is soley testing a given directory whether it meets the
-checks. A variety of criteria are available at `predefined_criteria`.
+as a root criterion.
 
-Step 2:
+The operators `&` for logical and and `|` do work on any criterion,
+adhering to python's operator precedence - in doubt use parentheses.
 
-Bundle different project criteria together to a root criterion,
-so if one isn't successful, the next one is searched for.
+Unsurprisingly, the predefined `is_vcs_root` criterion is:
 
-The root criterion does actually do the search of the filesystem for
-the root of your project.
-
-This is easy to elaborate in an example:
+```python3
+is_vcs_root = is_git_root | is_svn_root
+```
 
 ```python3
 from pyprojroot2 import as_root_criterion
-from pyprojroot2.predefined_criteria import is_git_root, has_dir
+from pyprojroot2.predefined_criteria import is_git_root, has_dir, is_here
 
-my_root = as_root_criterion(
-    {
-        "is_git": is_git_root,
-        "has_data": has_dir("data"),
-        "has_here_file": ".here", # will match any entry (file or dir)
-    }
-)
-
-my_data = my_root("data")
+my_root = is_git_root | is_here
+my_data = my_root.find_root_file("data")
 ```
 
 This root criterion will first look for a git root in all parent directories,
@@ -124,48 +120,18 @@ If you know that the `data` directory is in the git root directory, you
 could write:
 
 ```python3
-my_root = as_root_criterion(
-    {
-        "is_git_with_data": is_git_root & has_dir("data"),
-        "has_here_file": ".here",
-    }
+my_root = (
+    (is_git_root & has_dir("data")) |
+    is_here,
 )
 ```
 
-Keeping the `.here` file as a fallback option.
+and also keep the `.here` file marker as a fallback option.
 
+## R-like interface
 
-The operators `&` for logical and and `|` do work on any criterion,
-adhering to python's operator precedence - in doubt use parentheses.
-
-Unsurprisingly, the predefined `is_vcs_root` criterion is:
-
-```python3
-is_vcs_root = is_git_root | is_svn_root
-```
-
-If you have only one criterion, then you can skip this step using the
-convenience functions `find_root`, ... of criteria, doing this implicitly:
-
-```python3
-(is_git_vcs & has_dir("data")).find_root()
-```
-
-will find the root for this one criterion.
-
-The root criteria can be manipulated using the OrderedDict methods:
-
-```python3
-del my_root["has_here_file"]
-```
-
-to remove a criterion or demote a criterion:
-
-```
-my_root.move_to_end("some_less_expected_criterion")
-```
-
-by moving it to the end.
+The modules `rprojroot` and `rhere` are python ports of the corresponding
+R packages on top of the `pyprojroot2` core module. 
 
 ## Use outside python
 

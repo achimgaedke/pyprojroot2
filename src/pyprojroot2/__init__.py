@@ -1,29 +1,60 @@
-from .here import here, HERE_CRITERION
-from .root import as_root_criterion
-from .predefined_criteria import has_file, has_dir, matches_glob
+from .predefined_criteria import (
+    has_dir,
+    has_file,
+    has_file_pattern,
+    is_git_root,
+    is_vcs_root,
+    py_here_criteria,
+    r_here_criteria,
+)
+from .pyprojroot_0_2_0 import here, py_project_root
+from .root_criterion import RootCriterion, as_root_criterion
+from .rprojroot import find_root, find_root_file, get_root_desc, is_root_criterion
 
-find_root = HERE_CRITERION.find_root
-find_root_with_reason = HERE_CRITERION.find_root_with_reason
+# Purpose of this module:
 
-# TODO:
-# find match for CriterionFunction, Criterion, Criteria
-# criteria.PathSpec - do I want to expose this?
+# meet expections from https://rprojroot.r-lib.org/articles/rprojroot.html
+# list of exports: https://github.com/r-lib/rprojroot/blob/main/NAMESPACE
+# don't try to add everything here but rather a handy subset
+# for a more complete rprojroot experience, use from pyrojroot2 import rprojroot
 
-# todo: understand what is useful here...
-# either rprojroot's stuff or pyprojroot's stuff?
-# and where does the "here" functionality go?
+# provide `here`` and `py_project_root`` for compatibility wiht pyprojroot-0.2.0
+# don't provide the interface of never published pyprojroot-0.3.0
 
-# todo: how to link this up to pyproject.toml?
-# if installed, read from installation metadata
+# The r-here "here" functionality is available in the rhere module.
+# use from pyrojroot2 import rhere
+# https://here.r-lib.org/articles/here.html
+
+# todo: how to link the version up to pyproject.toml?
+# probably use setuptools_scm
 __version__ = "0.4.0"
 
 __all__ = [
-    "__version__",
-    "as_root_criterion",
-    "has_file",
-    "has_dir",
+    # pyprojroot-0.2.0
     "here",
-    "matches_glob",
+    "py_project_root",
+    # rprojroot
+    "as_root_criterion",
+    # "criteria", # todo: default criteria for this project
     "find_root",
-    "find_root_with_reason",
+    "find_root_file",
+    "from_wd",
+    "get_root_desc",
+    "has_basename",
+    "has_dir",
+    "has_file",
+    "has_file_pattern",
+    "is_git_root",
+    "is_root_criterion",
+    "is_svn_root",
+    "is_vcs_root",
+    # that should be RootCriterion
+    # "root_criterion",
+    # pyprojroot2
+    # core
+    "RootCriterion",
+    # other more pythonic prespecified criteria
+    "py_here_criteria",
+    "r_here_criteria",
+    "__version__",
 ]

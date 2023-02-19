@@ -1,42 +1,32 @@
 # Public Interface
 
-Pile of ideas, references, pointers...
+Mixture of:
+* the not too R specific parts of rprojroot (rest in separate module)
+* the pyprojroot 0.2.0 interface
+* the RootCriterion class
 
-## here
+Outstanding issues:
 
-Another package, but based on pyprojroot?
-No, a submodule, easily importable.
-
-Missing:
-* subdir: I believe can be emulated by providing path as a relative path
-* make_fixed_file: use pathlib features
-
-There are some extra commands, which might or might not need
-a separate implementation, see `here.py`.
-
-Is there an expectation of caching?
+* subdir: I believe can be emulated by providing path as a relative path, see
+  also https://github.com/r-lib/rprojroot/issues/84 - revisit `has_basname`
+  implementation.
 
 ## pyprojroot
 
-how to set the default root criterion?
+How to set/manage the package's default root criterion?
 
 Biggest challenge: make it easy to tailor a root criterion.
-Second challenge: provide convenience and legacy functions at the correct location.
-
-Consider using OrderedDict as base class, exposing methods to users.
-Unnamed parameters will be automatically named and put into the dict at the
-beginning.
 
 Measure performance...
 
 ## Missing Criteria:
 
 * for regular expression, some subdir argument, where to search for the file/dir.
-* pattern matching directories, entries in general
+* pattern matching directories specifically
 * a rule matching a dir or file's name with the directory's basename as a component,
   e.g. `<project>/<project>.Rproj` ...
 * criteria testing absence of files... or generic negation?!
-* a function testing the directory should be convertable into a criterion
+* add more predefined criteria closer to the python universe
 
 ## Observed use cases
 

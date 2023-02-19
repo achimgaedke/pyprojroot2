@@ -5,7 +5,7 @@ import argparse
 import sys
 
 from . import __version__
-from .here import HERE_CRITERION
+from .predefined_criteria import py_here_criteria
 
 
 def main() -> int:
@@ -22,8 +22,11 @@ absolute pathname of the project root, otherwise exits with an error (1) and a m
     )
     parser.parse_args()
 
+    # this should be specifically "--here"
+    # other predefined roots (instances of RootCriterion) should be selectable
+    # with --criterion xxx
     try:
-        print(HERE_CRITERION.find_root())
+        print(py_here_criteria.find_root())
         return 0
     except FileNotFoundError:
         print("could not find the project root", file=sys.stderr)
