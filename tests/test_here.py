@@ -1,4 +1,4 @@
-import os
+import pathlib
 
 import pytest
 
@@ -17,7 +17,13 @@ from pyprojroot2 import here
     ],
 )
 @pytest.mark.parametrize("child_dir", ["stuff", "src", "data", "data/hello"])
-def test_here(tmp_path, project_files, file_type, child_dir) -> None:
+def test_here(
+    tmp_path: pathlib.Path,
+    project_files: str,
+    file_type: str,
+    child_dir: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """
     This test uses pytest's tmp_path facilities to create a simulated project
     directory, and checks that the path is correct.
@@ -33,7 +39,7 @@ def test_here(tmp_path, project_files, file_type, child_dir) -> None:
     # Create child dirs
     start_dir = tmp_path / child_dir
     start_dir.mkdir(parents=True)
-    os.chdir(start_dir)
+    monkeypatch.chdir(start_dir)
 
     # Verify the project against current work directory
     current_path = here()

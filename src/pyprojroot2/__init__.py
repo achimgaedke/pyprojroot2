@@ -1,3 +1,5 @@
+from .core_criteria import RootCriterion
+from .generic_criteria import as_root_criterion
 from .predefined_criteria import (
     has_dir,
     has_file,
@@ -8,7 +10,6 @@ from .predefined_criteria import (
     r_here_criteria,
 )
 from .pyprojroot_0_2_0 import here, py_project_root
-from .root_criterion import RootCriterion, as_root_criterion
 from .rprojroot import find_root, find_root_file, get_root_desc, is_root_criterion
 
 # Purpose of this module:

@@ -19,7 +19,8 @@ from .predefined_criteria import (
     is_vcs_root,
     r_criteria,
 )
-from .root_criterion import PathSpec, RootCriterion, as_root_criterion
+from .core_criteria import PathSpec, RootCriterion
+from .generic_criteria import as_root_criterion
 
 # the rprojroot package actually doesn't have a default criterion and the
 # criteria in the r package are rather a table of contents like list, not

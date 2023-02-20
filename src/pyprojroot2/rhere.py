@@ -1,8 +1,9 @@
 import pathlib
 import typing
 
+from .core_criteria import RootCriterion, PathSpec
 from .predefined_criteria import py_here_criteria
-from .root_criterion import HasFile, PathSpec, RootCriterion, as_root_criterion
+from .generic_criteria import HasFile, as_root_criterion
 
 __all__ = ["here", "dr_here", "i_am", "set_root_crit", "set_here"]
 
@@ -24,8 +25,11 @@ def here(*args: typing.Any, **kwargs: typing.Any) -> pathlib.Path:
 
 # https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/dr_here.R#L11
 def dr_here(*args: typing.Any, **kwargs: typing.Any) -> str:
-    _, reason = HERE_ROOT_CRITERION.find_root_with_reason(*args, **kwargs)
-    return reason
+    """
+    Give a reason why here choses a directory as root.
+    """
+    dir, reason = HERE_ROOT_CRITERION.find_root_with_reason(*args, **kwargs)
+    return f"here() starts at {dir}\nThis directory {reason}"
 
 
 # https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/here.R#L39
@@ -36,10 +40,10 @@ def set_root_crit(criterion: RootCriterion) -> None:
 
 
 # https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/set_here.R#L25
-def set_here(path: PathSpec) -> None:
-    # see
+def set_here(path: PathSpec = ".") -> None:
     # warn: superseded: `i_am` is preferred!
     # add warning if alread exists...
+    # and there's a verbose mode...
     (pathlib.Path(path) / ".here").touch()
 
 

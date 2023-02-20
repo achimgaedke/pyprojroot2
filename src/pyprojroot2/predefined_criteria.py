@@ -1,5 +1,5 @@
-from .root_criterion import (
-    AnyCriteria,
+from .core_criteria import AnyCriteria
+from .generic_criteria import (
     HasBasename,
     HasDir,
     HasEntry,

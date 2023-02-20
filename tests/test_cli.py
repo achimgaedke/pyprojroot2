@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from pyprojroot2 import cli, RootCriterion
+from pyprojroot2 import RootCriterion, cli
 
 
 def test_criteria_access() -> None:

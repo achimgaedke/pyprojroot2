@@ -1,235 +1,148 @@
-import contextlib
-import os
 import pathlib
-import shutil
-import tempfile
-import typing
 
 import pytest
 
-from pyprojroot2.root_criterion import (
-    HasFile,
-    IsCwd,
-    AnyCriteria,
+from pyprojroot2.generic_criteria import (
     HasBasename,
-    HasEntry,
-    AllCriteria,
     HasDir,
+    HasEntry,
+    HasFile,
     HasFileGlob,
     HasFilePattern,
+    IsCwd,
 )
 
 
-# todo: make this a fixture with pytest
-@contextlib.contextmanager
-def fs_structure(
-    fs_structure: typing.Dict[str, typing.Union[str, None]]
-) -> typing.Iterator[pathlib.Path]:
-    """
-    Create a temporary file structure on the fly
-
-    Files: name (incl subdirs) -> contents as string
-    Directories name (incl subdirs) -> None
-    """
-
-    tmpdir = pathlib.Path(tempfile.mkdtemp())
-
-    for name, contents in fs_structure.items():
-        assert not pathlib.Path(name).is_absolute()
-        if contents is None:
-            (tmpdir / name).mkdir(parents=True, exist_ok=True)
-        elif isinstance(contents, str):
-            filepath = tmpdir / name
-            filepath.parent.mkdir(parents=True, exist_ok=True)
-            with open(tmpdir / name, "wt") as f:
-                f.write(contents)
-        else:
-            raise ValueError("unexpected type in fs_structure")
-
-    try:
-        yield tmpdir
-    finally:
-        shutil.rmtree(tmpdir, ignore_errors=True)
+@pytest.fixture
+def example_fs_structure(tmp_path: pathlib.Path) -> pathlib.Path:
+    (tmp_path / "a/b/c/").mkdir(parents=True)
+    (tmp_path / "my_file").write_text("a\nb\nc\nd\n")
+    return tmp_path
 
 
-@contextlib.contextmanager
-def chdir(new_dir: typing.Union[str, pathlib.Path]) -> typing.Iterator[None]:
-    """
-    Changes the current directory for the time of the context and restores
-    the previous one.
-    """
-    # NB this is not threadsafe as it manipulates the global current path
-    old_cwd = os.curdir
-    os.chdir(new_dir)
-    try:
-        yield
-    finally:
-        os.chdir(old_cwd)
+def test_has_file_criterion(example_fs_structure: pathlib.Path) -> None:
+    assert list(HasFile.read_lines_from_file(example_fs_structure / "my_file")) == [
+        "a",
+        "b",
+        "c",
+        "d",
+    ]
+
+    # test "fixed" content
+    assert HasFile("my_file", "c", fixed=True).test(example_fs_structure)
+    assert HasFile("my_file", "c", n=-3, fixed=True).test(example_fs_structure)
+    assert HasFile("my_file", "c", n=3, fixed=True).test(example_fs_structure)
+    assert not HasFile("my_file", "a", fixed=True, n=0).test(example_fs_structure)
+    assert not HasFile("my_file", "", fixed=True).test(example_fs_structure)
+
+    # test regexp matching
+    assert HasFile("my_file", "[bc]").test(example_fs_structure)
+    assert not HasFile("my_file", "[bc]", n=1).test(example_fs_structure)
+
+    assert not HasFile("my_file.txt", "[bc]", n=1).test(example_fs_structure)
+
+    # test direct use as root criterion
+    assert example_fs_structure == HasFile("my_file").find_root(
+        example_fs_structure / "a/b/c/"
+    )
+
+    my_file = HasFile("my_file").find_file("my_file", path=example_fs_structure)
+    assert isinstance(my_file, pathlib.Path)
+    assert open(my_file).read() == "a\nb\nc\nd\n"
+
+    with pytest.raises(ValueError):
+        HasFile("my_file").find_file("my_file", "/absolute", path=example_fs_structure)
+
+    # look at the reason
+    with pytest.raises(FileNotFoundError):
+        HasFile("my_file_not there").find_root_with_reason(example_fs_structure)
+
+    assert HasFile("my_file").find_root_with_reason(example_fs_structure) == (
+        pathlib.Path(example_fs_structure),
+        "has a file `my_file`",
+    )
+    assert HasFile("my_file", "a", 1, fixed=True).find_root_with_reason(
+        example_fs_structure
+    ) == (
+        pathlib.Path(example_fs_structure),
+        "has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s",
+    )
+
+    assert HasFile("my_file", "[ac]", 1, fixed=False).find_root_with_reason(
+        example_fs_structure
+    ) == (
+        pathlib.Path(example_fs_structure),
+        "has a file `my_file` and file contains a line matching the regular expression `[ac]` in the first 1 line/s",
+    )
+
+    # test the describe method
+    assert (
+        HasFile("my_file", "a", 1, fixed=True).describe()
+        == "has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s"
+    )
+    assert (
+        HasFile("my_file", "[ab]", 3).describe()
+        == "has a file `my_file` and file contains a line matching the regular expression `[ab]` in the first 3 line/s"
+    )
 
 
-def test_has_file_criterion() -> None:
-    testfile_contents = "a\nb\nc\nd\n"
-
-    with fs_structure({"my_file": testfile_contents, "a/b/c/": None}) as test_dir:
-        assert HasFile("my_file").test(test_dir)
-        assert not HasFile("my_file.txt").test(test_dir)
-
-        assert list(HasFile("my_file").read_lines_from_file(test_dir / "my_file")) == [
-            "a",
-            "b",
-            "c",
-            "d",
-        ]
-
-        # test "fixed" content
-        assert HasFile("my_file", "c", fixed=True).test(test_dir)
-        assert HasFile("my_file", "c", n=-3, fixed=True).test(test_dir)
-        assert HasFile("my_file", "c", n=3, fixed=True).test(test_dir)
-        assert not HasFile("my_file", "a", fixed=True, n=0).test(test_dir)
-        assert not HasFile("my_file", "", fixed=True).test(test_dir)
-
-        # test regexp matching
-        assert HasFile("my_file", "[bc]").test(test_dir)
-        assert not HasFile("my_file", "[bc]", n=1).test(test_dir)
-
-        assert not HasFile("my_file.txt", "[bc]", n=1).test(test_dir)
-
-        # test direct use as root criterion
-        assert test_dir == HasFile("my_file").find_root(test_dir / "a/b/c/")
-
-        my_file = HasFile("my_file").find_file("my_file", path=test_dir)
-        assert isinstance(my_file, pathlib.Path)
-        assert open(my_file).read() == testfile_contents
-
-        # test that non-existing root is returned as None
-        with pytest.raises(FileNotFoundError):
-            HasFile("my_file_not there").find_root(test_dir)
-
-        # test current directory setting
-        with chdir(test_dir):
-            assert HasFile("my_file").find_file("my_file")
-
-        with chdir(test_dir / "a"):
-            assert HasFile("my_file").find_file("my_file")
-
-        # look at the reason
-        with pytest.raises(FileNotFoundError):
-            HasFile("my_file_not there").find_root_with_reason(test_dir)
-
-        assert HasFile("my_file").find_root_with_reason(test_dir) == (
-            pathlib.Path(test_dir),
-            "has a file `my_file`",
-        )
-        assert HasFile("my_file", "a", 1, fixed=True).find_root_with_reason(
-            test_dir
-        ) == (
-            pathlib.Path(test_dir),
-            "has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s",
-        )
-
-        assert HasFile("my_file", "[ac]", 1, fixed=False).find_root_with_reason(
-            test_dir
-        ) == (
-            pathlib.Path(test_dir),
-            "has a file `my_file` and file contains a line matching the regular expression `[ac]` in the first 1 line/s",
-        )
-
-        # test the describe method
-        assert (
-            HasFile("my_file", "a", 1, fixed=True).describe()
-            == "has a file `my_file` and file contains a line with the contents `a` in the first 1 line/s"
-        )
-        assert (
-            HasFile("my_file", "[ab]", 3).describe()
-            == "has a file `my_file` and file contains a line matching the regular expression `[ab]` in the first 3 line/s"
-        )
+def test_current_dir(
+    monkeypatch: pytest.MonkeyPatch, example_fs_structure: pathlib.Path
+) -> None:
+    monkeypatch.chdir(example_fs_structure)
+    assert IsCwd().test(example_fs_structure)
+    assert example_fs_structure == IsCwd().find_root(
+        example_fs_structure / "a" / "b" / "c"
+    )
 
 
-def test_current_dir() -> None:
-    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        with chdir(test_dir):
-            assert IsCwd().test(test_dir)
-            assert test_dir == IsCwd().find_root(test_dir / "a" / "b" / "c")
+def test_had_dir(example_fs_structure: pathlib.Path) -> None:
+    assert HasDir("a").test(example_fs_structure)
+    assert not HasDir("a").test(example_fs_structure / "b")
+
+    assert HasDir("a").test_with_reason(example_fs_structure) == (
+        True,
+        "contains the directory `a`",
+    )
+
+    assert HasDir("b").test_with_reason(example_fs_structure) == (
+        False,
+        "not (contains the directory `b`)",
+    )
 
 
-def test_has_entry() -> None:
-    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        assert HasEntry("a").test(test_dir)
-        assert HasEntry("a/").test(test_dir)
-        assert HasEntry(".").test(test_dir)  # that's an odd case?!
-        assert HasEntry("my_file").test(test_dir)
-        assert HasEntry("my_file/").test(
-            test_dir
-        )  # oddly this succeeds, though it is a file
-        assert HasEntry("my_file/.").test(
-            test_dir
-        )  # oddly this succeeds, though it is a file
-        assert not HasEntry("b").test(test_dir)
-        assert HasEntry("a").test_with_reason(test_dir) == (
-            True,
-            "contains the entry `a`",
-        )
+def test_has_entry(example_fs_structure: pathlib.Path) -> None:
+    assert HasEntry("a").test(example_fs_structure)
+    assert HasEntry("a/").test(example_fs_structure)
+    assert HasEntry(".").test(example_fs_structure)  # that's an odd case?!
+    assert HasEntry("my_file").test(example_fs_structure)
+    assert HasEntry("my_file/").test(
+        example_fs_structure
+    )  # oddly this succeeds, though it is a file
+    assert HasEntry("my_file/.").test(
+        example_fs_structure
+    )  # oddly this succeeds, though it is a file
+    assert not HasEntry("b").test(example_fs_structure)
+    assert HasEntry("a").test_with_reason(example_fs_structure) == (
+        True,
+        "contains the entry `a`",
+    )
 
 
-def test_has_basename() -> None:
-    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        assert HasBasename("a").test(test_dir / "a")
-        assert not HasBasename("a").test(test_dir)
-        assert HasBasename(test_dir.name).test(test_dir)
+def test_has_basename(example_fs_structure: pathlib.Path) -> None:
+    assert HasBasename("a").test(example_fs_structure / "a")
+    assert not HasBasename("a").test(example_fs_structure)
+    assert HasBasename(example_fs_structure.name).test(example_fs_structure)
 
 
-def test_pattern_filenames() -> None:
-    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        assert HasFileGlob("my_*").test(test_dir)
-        assert HasFilePattern("_fil").test(test_dir)
-        assert not HasFilePattern("^_fil").test(test_dir)
-        assert not HasFilePattern("[ab]").test(test_dir)
+def test_pattern_filenames(example_fs_structure: pathlib.Path) -> None:
+    assert HasFileGlob("my_*").test(example_fs_structure)
+    assert HasFilePattern("_fil").test(example_fs_structure)
+    assert not HasFilePattern("^_fil").test(example_fs_structure)
+    assert not HasFilePattern("[ab]").test(example_fs_structure)
 
-        assert HasFileGlob("my_*").describe() == "has a file matching `my_*`"
-        assert (
-            HasFilePattern("_fil").describe()
-            == "has a file matching the regular expression `_fil`"
-        )
-
-
-def test_any_criteria() -> None:
-    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        combined_criteria = HasBasename("a") | HasFile("my_file")
-        assert isinstance(combined_criteria, AnyCriteria)
-
-        assert combined_criteria.test(test_dir)
-        assert combined_criteria.test(test_dir / "a")
-        assert not combined_criteria.test(test_dir / "b")
-
-        assert (
-            combined_criteria.describe()
-            == "has the basename `a` or has a file `my_file`"
-        )
-
-
-def test_all_criteria() -> None:
-    with fs_structure({"my_file": "a\nb\nc\nd\n", "a/b/c/": None}) as test_dir:
-        combined_criteria = HasDir("a") & HasFile("my_file")
-        assert isinstance(combined_criteria, AllCriteria)
-
-        assert combined_criteria.test(test_dir)
-        assert not (combined_criteria & HasDir("b")).test(test_dir)
-
-        assert (
-            combined_criteria.describe()
-            == "contains the directory `a` and has a file `my_file`"
-        )
-        combined_root, combined_reason = combined_criteria.find_root_with_reason(
-            test_dir / "a/b"
-        )
-        assert combined_root == test_dir
-        assert combined_reason == "contains the directory `a` and has a file `my_file`"
-
-        combined_all_any = combined_criteria & HasDir("b") | HasBasename(test_dir.name)
-        assert isinstance(combined_all_any, AnyCriteria)  # due to operator precedence
-        assert combined_all_any.test(test_dir)
-
-        assert combined_all_any.find_root(test_dir / "a")
-        combined_root, reason = combined_all_any.find_root_with_reason(test_dir / "a")
-        assert combined_root == test_dir
-        assert reason == f"has the basename `{test_dir.name}`"
+    assert HasFileGlob("my_*").describe() == "has a file matching `my_*`"
+    assert (
+        HasFilePattern("_fil").describe()
+        == "has a file matching the regular expression `_fil`"
+    )

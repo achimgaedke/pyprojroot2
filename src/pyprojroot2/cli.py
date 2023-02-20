@@ -7,7 +7,7 @@ import sys
 import typing
 
 from . import __version__
-from .root_criterion import RootCriterion
+from .core_criteria import RootCriterion
 from . import predefined_criteria
 
 DEFAULT_CRITERION = "py_here_criteria"
