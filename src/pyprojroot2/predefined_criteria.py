@@ -24,12 +24,34 @@ has_dir = HasDir
 # https://github.com/chendaniely/pyprojroot/blob/dev/src/pyprojroot/criterion.py#L66
 matches_glob = HasEntryGlob
 
+# hmmm, that criterion is a bit odd, relies on the assumption
+# that the first tested directory is the current directory.
+from_wd = IsCwd()
+
 # criteria provided by this package
 
 # https://github.com/iterative/dvc/blob/8edaef010322645ccfc83936e5b7f706ad9773a4/dvc/repo/__init__.py#L399
 is_dvc_root = HasDir(".dvc")
 
-# criteria from R project rprojroot
+# Visual Studio Code IDE
+is_vscode_project = HasDir(".vscode")
+
+# IntelliJ IDEA IDE
+is_idea_project = HasDir(".idea")
+
+# Spyder IDE
+is_spyder_project = HasDir(".spyproject")
+
+# https://anaconda-project.readthedocs.io/en/latest/index.html
+is_anaconda_project = HasFile("anaconda-project.yml")
+
+# a python packaging project
+# todo: Specify file contents? HasFile("pyproject.toml", "[project]", fixed=True)
+is_python_project = (
+    HasFile("setup.py") | HasFile("setup.cfg") | HasFile("pyproject.toml")
+)
+
+# criteria from rprojroot specific to R
 
 # https://github.com/r-lib/rprojroot/blob/main/R/root.R#L309
 is_rstudio_project = has_file_pattern("[.]Rproj$", contents="^Version: ", n=1)
@@ -49,22 +71,24 @@ is_pkgdown_project = (
 
 is_projectile_project = has_file(".projectile")
 
-is_git_root = has_dir(".git") | has_file(".git", contents="^gitdir: ")
-
-is_svn_root = has_dir(".svn")
-
-is_vcs_root = is_git_root | is_svn_root
-
-# hmmm, that criterion is a bit odd, relies on the assumption
-# that the first tested directory is the current directory.
-from_wd = IsCwd()
-
 # TODO: use subdir
 # is_testthat = has_basename("testthat", c("tests/testthat", "testthat"))
 # or try... but doesn't reeturn the subdir...
 # is_testthat = has_dir("tests/testthat") | has_dir("testthat") | has_basename("testthat")
 is_testthat = has_basename("testthat")
 
+# Version control
+
+is_git_root = has_dir(".git") | has_file(".git", contents="^gitdir: ")
+
+is_svn_root = has_dir(".svn")
+
+is_vcs_root = is_git_root | is_svn_root
+
+# criteria from R project here
+
+# https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/set_here.R#L46
+is_here = has_file(".here")
 
 # see https://github.com/r-lib/rprojroot/blob/main/R/root.R#L349
 r_criteria = as_root_criterion(
@@ -83,10 +107,6 @@ r_criteria = as_root_criterion(
     }
 )
 
-# criteria from R project here
-
-# https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/set_here.R#L46
-is_here = has_file(".here")
 
 # https://github.com/r-lib/here/blob/970dd2726c5cddda4a0e44e910fe5290be063485/R/zzz.R#L3
 r_here_criteria = AnyCriteria(
