@@ -9,7 +9,7 @@ from pyprojroot2 import py_here_criteria, rhere
 def rhere_setup(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> pathlib.Path:
-    monkeypatch.setattr(rhere, "HERE_ROOT_CRITERION", py_here_criteria)
+    monkeypatch.setattr(rhere, "_rhere_root_criterion", py_here_criteria)
     monkeypatch.chdir(tmp_path)
     (tmp_path / "something").touch()
     return tmp_path
