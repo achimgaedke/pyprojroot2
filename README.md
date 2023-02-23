@@ -31,7 +31,7 @@ locate your data by detecting the root of a collection of python projects.
 Try it out:
 
 ```shell
-pip3 install git+https://github.com/achimgaedke/pyprojroot2.git@pyprojroot2-rewrite
+pip3 install git+https://github.com/achimgaedke/pyprojroot2.git
 ```
 
 It works as a drop-in replacement for `pyprojroot`:
