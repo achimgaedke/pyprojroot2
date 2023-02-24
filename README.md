@@ -137,17 +137,19 @@ and also keep the `.here` marker file as a fallback option.
 
 The usual operator precedence applies, `&` binds stronger than `|`.
 
-## Use outside python
+## Root finding outside python
 
 The command `pyprojroot2` will allow locating the root of a project on
 the shell. So you can be sure, the result is consistent with the python
 scripting.
 
 This command prints out the project root directory searched from the
-current directory using the default criteria
+current directory using the default criteria.
+
+So, "going back to the root" is simple as this
 
 ```shell
-pyprojroot2
+cd "$(pyprojroot2)"
 ```
 
 If no project root is found, it will fail with an error message.
