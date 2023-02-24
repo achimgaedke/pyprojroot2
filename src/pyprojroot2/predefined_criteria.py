@@ -34,7 +34,9 @@ from_wd = IsCwd()
 is_dvc_root = HasDir(".dvc")
 
 # Visual Studio Code IDE
-is_vscode_project = HasDir(".vscode")
+# refine this criterion to .vscode/settings.json
+# as there is a .vscode directory in the home directory as well
+is_vscode_project = HasFile(".vscode/settings.json")
 
 # IntelliJ IDEA IDE
 is_idea_project = HasDir(".idea")
